@@ -1,3 +1,8 @@
+[//]: # (Image References)
+[image2]: https://user-images.githubusercontent.com/10624937/42386929-76f671f0-8106-11e8-9376-f17da2ae852e.png "Kernel"
+
+
+
 # Projects
 
 ## Set Up
@@ -33,5 +38,7 @@ python -m ipykernel install --user --name drlnd --display-name "drlnd"
 ```
 
 5. Before running code in a notebook, change the kernel to match the `drlnd` environment by using the drop-down `Kernel` menu. 
+
+![Kernel][image2]
 
 6. Please check the README file for the specific project you want to run for further instructions
