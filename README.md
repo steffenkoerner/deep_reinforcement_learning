@@ -14,7 +14,7 @@ The projects that are contained in this repro can be found below.  All of the pr
 
 ### Additinal Resources
 
-* [Cheatsheet](https://github.com/steffenkoerner/deep_reinforcement_learning/tree/main/cheatsheet): [This PDF file](https://github.com/steffenkoerner/deep_reinforcement_learning/blob/main/cheatsheet/cheatsheet.pdf) contains a summary of all important reinforcement learning algorithms
+* [Cheatsheet](https://github.com/steffenkoerner/deep_reinforcement_learning/blob/main/cheatsheet.pdf): Contains a summary of all important reinforcement learning algorithms
 
 
 
