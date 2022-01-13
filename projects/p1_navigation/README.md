@@ -42,3 +42,6 @@ The state space has 37 dimensions and contains the agent's velocity, along with 
 
 Follow the instructions in `Navigation.ipynb` to get started with training your own agent!  
 
+### Details of Implementation
+More details on the technical implementaiton can be found in the [Report] (https://github.com/steffenkoerner/deep_reinforcement_learning/projects/Report)
+
