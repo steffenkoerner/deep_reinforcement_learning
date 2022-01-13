@@ -22,7 +22,7 @@ The state space has 37 dimensions and contains the agent's velocity, along with 
 
 ### Getting Started
 
-1. Follow the Setup from the project [README] (https://github.com/steffenkoerner/deep_reinforcement_learning/projects/README)
+1. Follow the Setup from the project [README](https://github.com/steffenkoerner/deep_reinforcement_learning/blob/main/projects/README.md)
 
 1. Download the environment from one of the links below.  You need only select the environment that matches your operating system:
     - Linux: [click here](https://s3-us-west-1.amazonaws.com/udacity-drlnd/P1/Banana/Banana_Linux.zip)
@@ -43,5 +43,5 @@ The state space has 37 dimensions and contains the agent's velocity, along with 
 Follow the instructions in `Navigation.ipynb` to get started with training your own agent!  
 
 ### Details of Implementation
-More details on the technical implementaiton can be found in the [Report] (https://github.com/steffenkoerner/deep_reinforcement_learning/projects/Report)
+More details on the technical implementaiton can be found in the [Report](https://github.com/steffenkoerner/deep_reinforcement_learning/blob/main/projects/p1_navigation/Report.md)
 
