@@ -38,8 +38,6 @@ The state space has 37 dimensions and contains the agent's velocity, along with 
 
 
 
-
-
 ### Instructions
 
 Follow the instructions in `Navigation.ipynb` to get started with training your own agent!  
