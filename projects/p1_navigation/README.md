@@ -20,6 +20,8 @@ The state space has 37 dimensions and contains the agent's velocity, along with 
 - **`2`** - turn left.
 - **`3`** - turn right.
 
+The task is episodic, and in order to solve the environment, your agent must get an average score of +13 over 100 consecutive episodes.
+
 ### Getting Started
 
 1. Follow the Setup from the project [README](https://github.com/steffenkoerner/deep_reinforcement_learning/blob/main/projects/README.md)
