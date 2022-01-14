@@ -12,6 +12,7 @@ Combining Deep Learning with Reinforcement Learning Algorithm leads to Deep Rein
 The projects that are contained in this repro can be found below.  All of the projects use rich simulation environments from [Unity ML-Agents](https://github.com/Unity-Technologies/ml-agents).
 
 * [Navigation](https://github.com/steffenkoerner/deep_reinforcement_learning/tree/main/projects/p1_navigation): This projects trains an agent to collect yellow bananas while avoiding blue bananas.
+* [REINFORCE Algorithm](https://github.com/steffenkoerner/deep_reinforcement_learning/tree/main/projects/reinforce_algorithm): This project contains the implementation of the REINFORCE algorithm to solve the OpenAI CartPole environment
 
 ### Additinal Resources
 
@@ -89,6 +90,8 @@ The projects that are contained in this repro can be found below.  All of the pr
 - [Cycle GAN](https://arxiv.org/pdf/1703.10593.pdf)
 - [LSGAN](https://arxiv.org/pdf/1611.04076.pdf)
  
+ ### Optimization
+ - [An overview of gradient descent optimization algorithm](https://ruder.io/optimizing-gradient-descent/)
 #### Examples
 - [Pix2Pix](https://affinelayer.com/pixsrv/)
 - [Cycle GAN](https://github.com/junyanz/pytorch-CycleGAN-and-pix2pix)
