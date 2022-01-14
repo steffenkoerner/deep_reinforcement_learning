@@ -3,8 +3,7 @@
 
 Deep learning is a type of [machine learning](https://en.wikipedia.org/wiki/Machine_learning), which is a type of [artificial intelligence](https://en.wikipedia.org/wiki/Artificial_intelligence).
 
-Combining Deep Learning with Reinforcement Algorithm leads to Deep Reinforcement Learning
-This repository contains my learning progress in Deep Reinforcement Learning.
+Combining Deep Learning with Reinforcement Learning Algorithm leads to Deep Reinforcement Learning. This repository contains my learning progress in Deep Reinforcement Learning.
 
 ## Table of Contents
 
@@ -17,6 +16,28 @@ The projects that are contained in this repro can be found below.  All of the pr
 ### Additinal Resources
 
 * [Cheatsheet](https://github.com/steffenkoerner/deep_reinforcement_learning/blob/main/cheatsheet.pdf): Contains a summary of all important reinforcement learning algorithms
+
+### Deep Reinforcement Learning
+- [Deep Reinforcement Learning: Pong from Pixels](http://karpathy.github.io/2016/05/31/rl/)
+- [Write an AI to win at Pong from scratch with Reinforcment Learning](https://medium.com/@dhruvp/how-to-write-a-neural-network-to-play-pong-from-scratch-956b57d4f6e0)
+- [Conquering OpenAI Retro Contest 2: Demistifying Rainbow Baseline](https://medium.com/intelligentunit/conquering-openai-retro-contest-2-demystifying-rainbow-baseline-9d8dd258e74b)
+- [Request for Research 2.0 OpenAI](https://openai.com/blog/requests-for-research-2/#cartpole)
+
+## Research Papers
+- [Dueling Network Architectures for DRL](https://arxiv.org/abs/1511.06581)
+- [Prioritized Experience Replay](https://arxiv.org/abs/1511.05952)
+- [DRL with Double Q Learning](https://arxiv.org/abs/1509.06461)
+- [Issues in Using Function Approximation in DRL](https://www.ri.cmu.edu/pub_files/pub1/thrun_sebastian_1993_1/thrun_sebastian_1993_1.pdf)
+- [Asynchronous Methods for DRL](https://arxiv.org/abs/1602.01783)
+- [A Distributional Perspective on RL](https://arxiv.org/abs/1707.06887)
+- [Noisy Networks for Exploration](https://arxiv.org/abs/1706.10295)
+- [Rainbow: Combining Improvements in DRL](https://arxiv.org/abs/1710.02298)
+
+
+
+
+### Evolution Strategies
+- [Evolution Strategies as a Scalable Alernative to Reinforcement Learning](https://openai.com/blog/evolution-strategies/)
 
 
 
