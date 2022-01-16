@@ -17,6 +17,7 @@ The projects that are contained in this repro can be found below.  All of the pr
 ### Additinal Resources
 
 * [Cheatsheet](https://github.com/steffenkoerner/deep_reinforcement_learning/blob/main/cheatsheet.pdf): Contains a summary of all important reinforcement learning algorithms
+* [Collection of Deep Learning Links](https://docs.google.com/spreadsheets/d/1NZtIxDWiJ_B0UKhIDUk-wTZAT3Fxfh-fGwcQKXg1bQU/edit#gid=0)
 
 ### Deep Reinforcement Learning
 - [Deep Reinforcement Learning: Pong from Pixels](http://karpathy.github.io/2016/05/31/rl/)
@@ -25,6 +26,7 @@ The projects that are contained in this repro can be found below.  All of the pr
 - [Request for Research 2.0 OpenAI](https://openai.com/blog/requests-for-research-2/#cartpole)
 
 ## Research Papers
+- [Human Level Control Through DRL](https://storage.googleapis.com/deepmind-media/dqn/DQNNaturePaper.pdf)
 - [Dueling Network Architectures for DRL](https://arxiv.org/abs/1511.06581)
 - [Prioritized Experience Replay](https://arxiv.org/abs/1511.05952)
 - [DRL with Double Q Learning](https://arxiv.org/abs/1509.06461)
@@ -33,6 +35,9 @@ The projects that are contained in this repro can be found below.  All of the pr
 - [A Distributional Perspective on RL](https://arxiv.org/abs/1707.06887)
 - [Noisy Networks for Exploration](https://arxiv.org/abs/1706.10295)
 - [Rainbow: Combining Improvements in DRL](https://arxiv.org/abs/1710.02298)
+- [Proximal Policy Optimization Algorithm](https://arxiv.org/abs/1707.06347)
+- [Q-Prop: Sample-Efficient Policy Gradient with An Off-Policy Critic](https://arxiv.org/abs/1611.02247)#
+- [A Deeper Look at Experience Replay](https://arxiv.org/pdf/1712.01275.pdf)
 
 
 
@@ -146,7 +151,16 @@ The projects that are contained in this repro can be found below.  All of the pr
 - [Transfer Learning](http://cs231n.github.io/transfer-learning/)
   - use pre-trained networks to improve the performance of your classifier
   
-  
+  ### Interesting for blog
+  - [Computational Graph Pytorch](https://stackoverflow.com/questions/63582590/why-do-we-call-detach-before-calling-numpy-on-a-pytorch-tensor)
+  - [Pytorch autograd](https://towardsdatascience.com/pytorch-autograd-understanding-the-heart-of-pytorchs-magic-2686cd94ec95#:~:text=Gradients%20are%20calculated%20by%20tracing,way%20using%20the%20chain%20rule.)
+  - [Pytorch Autograd Youtube Video](https://www.youtube.com/watch?v=MswxJw-8PvE)
+  - [Deriving Policy Gradient](https://medium.com/@thechrisyoon/deriving-policy-gradients-and-implementing-reinforce-f887949bd63)
+
+  ### Other github resources
+  - [RL-Adventure](https://github.com/higgsfield/RL-Adventure)
+  - [Really cool implementaiton of different RL algorithm](https://github.com/ShangtongZhang/DeepRL)
+  - [RL ALgorithm Libraries](https://github.com/vwxyzjn/cleanrl)
   ### Skills a ML should have
 - Building and training neural networks
 - Model evaluation and validation
