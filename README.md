@@ -38,8 +38,9 @@ The projects that are contained in this repro can be found below.  All of the pr
 - [Proximal Policy Optimization Algorithm](https://arxiv.org/abs/1707.06347)
 - [Q-Prop: Sample-Efficient Policy Gradient with An Off-Policy Critic](https://arxiv.org/abs/1611.02247)#
 - [A Deeper Look at Experience Replay](https://arxiv.org/pdf/1712.01275.pdf)
-
-
+- [High-Dimensional Continuous Control Using Generalized Advantage Estimation](https://arxiv.org/abs/1506.02438)
+- [Continuous control with deep reinforcement learning](https://arxiv.org/abs/1509.02971)
+- [Benchmarking Deep Reinforcement Learning for Continuous Control](https://arxiv.org/abs/1604.06778)
 
 
 ### Evolution Strategies
