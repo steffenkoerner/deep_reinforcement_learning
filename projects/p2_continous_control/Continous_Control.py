@@ -3,13 +3,20 @@ import numpy as np
 import matplotlib.pyplot as plt
 import random
 from collections import namedtuple, deque
+import torch
+import torch.nn as nn
+import torch.nn.functional as F
+import torch.optim as optim
+from ReplayBuffer import ReplayBuffer
 
+LEARNING_RATE = 5e-4
+BUFFER_SIZE = int(1e5)
+BATCH_SIZE = 64
+device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
 
-LEARNING_RATE = 5e-4 
-
-
-class DDPGNetwork():
-    pass
+class DDPGNetwork(nn.Module):
+    def __init__(self, state_size, action_size, seed):
+        super(DDPGNetwork, self).__init__()
 
 class DDPGAgent():
     def __init__(self, state_size, action_size, seed):
@@ -28,7 +35,7 @@ class DDPGAgent():
         # DDPG-Network
         self.ddpg_network_local = DDPGNetwork(state_size, action_size, seed).to(device)
         self.ddpg_network_target = DDPGNetwork(state_size, action_size, seed).to(device)
-        self.optimizer = optim.Adam(self.ddpg_network_local.parameters(), lr=LEARNING_RATE)
+        #self.optimizer = optim.Adam(self.ddpg_network_local.parameters(), lr=LEARNING_RATE)
 
         # Replay memory
         self.memory = ReplayBuffer(action_size, BUFFER_SIZE, BATCH_SIZE, seed)
@@ -46,7 +53,7 @@ class DDPGAgent():
         #         experiences = self.memory.sample()
         #         self.learn(experiences, GAMMA)
 
-    def act(self, state, eps=0.):
+    def get_acion_per_current_policy_for(self, state, eps=0.):
         """Returns actions for given state as per current policy.
         
         Params
@@ -119,7 +126,7 @@ def plot_scores(scores):
     #plt.show()
     
 
-def ddpg(env, n_episodes=2000, max_t=1000, eps_start=1.0, eps_end=0.01, eps_decay=0.995):
+def ddpg(env, agent, n_episodes=2000, max_t=1000, eps_start=1.0, eps_end=0.01, eps_decay=0.995):
     scores = []                        # list containing scores from each episode
     scores_window = deque(maxlen=100)  # last 100 scores
     max_score_value = 0
@@ -131,8 +138,8 @@ def ddpg(env, n_episodes=2000, max_t=1000, eps_start=1.0, eps_end=0.01, eps_deca
         env_info = env.reset(train_mode=True)[brain_name] 
         state = env_info.vector_observations[0] 
         score = 0
-        # for t in range(max_t):
-        #     action = agent.act(state, eps)
+        for t in range(max_t):
+            action = agent.get_acion_per_current_policy_for(state, eps)
             
         #     env_info = env.step(action)[brain_name]
         #     next_state = env_info.vector_observations[0]
@@ -204,5 +211,10 @@ def take_random_action():
 if __name__ == '__main__':
     env = UnityEnvironment(file_name='./Reacher_Linux/Reacher.x86_64')
     #take_random_action()
-    scores = ddpg(env)
+    brain = env.brains[env.brain_names[0]]
+    action_size = brain.vector_action_space_size
+    state_size = brain.vector_observation_space_size
+
+    agent = DDPGAgent(state_size= state_size, action_size = action_size, seed = 0)
+    scores = ddpg(env,agent)
     plot_scores(scores)
