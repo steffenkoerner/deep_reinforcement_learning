@@ -14,14 +14,25 @@ BUFFER_SIZE = int(1e5)
 BATCH_SIZE = 64
 device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
 
-class DDPGNetwork(nn.Module):
-    def __init__(self, state_size, action_size, seed):
-        super(DDPGNetwork, self).__init__()
+class Network(nn.Module):
+    def __init__(self, state_size, action_size, seed, fc1_units = 64, fc2_units = 64):
+        super(Network, self).__init__()
+        self.seed = torch.manual_seed(seed)
+        self.fc1 = nn.Linear(state_size, fc1_units)
+        self.fc2 = nn.Linear(fc1_units, fc2_units)
+        self.fc3 = nn.Linear(fc2_units, action_size)
+        self.fc4 = nn.Softmax(dim=1)
+
+    def forward(self, state):
+        x = F.relu(self.fc1(state))
+        x = F.relu(self.fc2(x))
+        x = F.relu(self.fc3(x))
+        x = self.fc4(x) # TODO: Adapt the layers
+        return x
 
 class DDPGAgent():
     def __init__(self, state_size, action_size, seed):
-        """Initialize an Agent object.
-        
+        """
         Params
         ======
             state_size (int): dimension of each state
@@ -31,20 +42,23 @@ class DDPGAgent():
         self.state_size = state_size
         self.action_size = action_size
         self.seed = random.seed(seed)
+        self.action_prob_low = 0.05
+        self.action_prob_high = 0.95
+        #self.state = None # Does it make sense to have this variable and if its none than initalise the network correspondingly or directly here
 
         # DDPG-Network
-        self.ddpg_network_local = DDPGNetwork(state_size, action_size, seed).to(device)
-        self.ddpg_network_target = DDPGNetwork(state_size, action_size, seed).to(device)
-        #self.optimizer = optim.Adam(self.ddpg_network_local.parameters(), lr=LEARNING_RATE)
+        self.network_local = Network(state_size, action_size, seed).to(device)
+        self.network_target = Network(state_size, action_size, seed).to(device)
+        self.optimizer = optim.Adam(self.network_local.parameters(), lr=LEARNING_RATE)
 
         # Replay memory
         self.memory = ReplayBuffer(action_size, BUFFER_SIZE, BATCH_SIZE, seed)
 
-    def step(self, state, action, reward, next_state, done):
-        pass
-        # # Save experience in replay memory
-        # self.memory.add(state, action, reward, next_state, done)
+    def save_experience_in_replay_buffer(self, state, action, reward, next_state, done):
+        self.memory.add(state, action, reward, next_state, done)
         
+    def something_else():
+        pass
         # # Learn every UPDATE_EVERY time steps.
         # self.t_step = (self.t_step + 1) % UPDATE_EVERY
         # if self.t_step == 0:
@@ -53,15 +67,17 @@ class DDPGAgent():
         #         experiences = self.memory.sample()
         #         self.learn(experiences, GAMMA)
 
-    def get_acion_per_current_policy_for(self, state, eps=0.):
-        """Returns actions for given state as per current policy.
-        
+    def get_acion_per_current_policy_for(self, state):
+        """
         Params
         ======
             state (array_like): current state
-            eps (float): epsilon, for epsilon-greedy action selection
         """
-        pass
+        state = torch.from_numpy(state).float().unsqueeze(0).to(device)
+        action = self.network_local(state)
+        action = action.cpu().detach().numpy()
+        #action += self.random_process.sample() #add some random noise
+        action = np.clip(action, self.action_prob_low, self.action_prob_high)
         # state = torch.from_numpy(state).float().unsqueeze(0).to(device)
         # self.qnetwork_local.eval()
         # with torch.no_grad():
@@ -126,11 +142,10 @@ def plot_scores(scores):
     #plt.show()
     
 
-def ddpg(env, agent, n_episodes=2000, max_t=1000, eps_start=1.0, eps_end=0.01, eps_decay=0.995):
+def ddpg(env, agent, n_episodes=2000, max_t=1000):
     scores = []                        # list containing scores from each episode
     scores_window = deque(maxlen=100)  # last 100 scores
     max_score_value = 0
-    eps = eps_start
     brain_name = env.brain_names[0]
     brain = env.brains[brain_name]
     for i_episode in range(1, n_episodes+1):
@@ -139,23 +154,24 @@ def ddpg(env, agent, n_episodes=2000, max_t=1000, eps_start=1.0, eps_end=0.01, e
         state = env_info.vector_observations[0] 
         score = 0
         for t in range(max_t):
-            action = agent.get_acion_per_current_policy_for(state, eps)
-            
-        #     env_info = env.step(action)[brain_name]
-        #     next_state = env_info.vector_observations[0]
-        #     reward = env_info.rewards[0]
-        #     done = env_info.local_done[0]
-            
-        #     agent.step(state, action, reward, next_state, done)
-        #     state = next_state
-        #     score += reward
-        #     if done:
-        #         break 
+            action = agent.get_acion_per_current_policy_for(state)
+            env_info = env.step(action)[brain_name]
+            next_state = env_info.vector_observations[0]
+            reward = env_info.rewards[0]
+            done = env_info.local_done[0]
+            agent.save_experience_in_replay_buffer(state, action, reward, next_state, done)
+            state = next_state
+            score += reward
+            # sample minibatch # Do we want to sample each timestep ???
+            # set y_i
+            # Update critic by minimizing loss
+            # upddate the actor policy by using the sampled policy gradient
+            if done:
+                break 
 
 
         scores_window.append(score)
         scores.append(score)
-        eps = max(eps_end, eps_decay*eps) 
         print('\rEpisode {}\tAverage Score: {:.2f}'.format(i_episode, np.mean(scores_window)), end="")
         if i_episode % 100 == 0:
             print('\rEpisode {}\tAverage Score: {:.2f}'.format(i_episode, np.mean(scores_window)))
@@ -209,12 +225,12 @@ def take_random_action():
     print('Total score (averaged over agents) this episode: {}'.format(np.mean(scores)))
 
 if __name__ == '__main__':
-    env = UnityEnvironment(file_name='./Reacher_Linux/Reacher.x86_64')
+    env = UnityEnvironment(file_name='/home/steffen/workspace/deep_reinforcement_learning/projects/p2_continous_control/Reacher_Linux/Reacher.x86_64')
     #take_random_action()
     brain = env.brains[env.brain_names[0]]
     action_size = brain.vector_action_space_size
     state_size = brain.vector_observation_space_size
 
     agent = DDPGAgent(state_size= state_size, action_size = action_size, seed = 0)
-    scores = ddpg(env,agent)
+    scores = ddpg(env,agent, n_episodes=1)
     plot_scores(scores)
