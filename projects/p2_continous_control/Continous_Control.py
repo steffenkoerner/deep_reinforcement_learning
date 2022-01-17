@@ -1,8 +1,14 @@
 from unityagents import UnityEnvironment
 import numpy as np
 import matplotlib.pyplot as plt
+import random
+from collections import namedtuple, deque
 
-class Network():
+
+LEARNING_RATE = 5e-4 
+
+
+class DDPGNetwork():
     pass
 
 class DDPGAgent():
@@ -19,10 +25,10 @@ class DDPGAgent():
         self.action_size = action_size
         self.seed = random.seed(seed)
 
-        # Q-Network
-        # self.qnetwork_local = QNetwork(state_size, action_size, seed).to(device)
-        # self.qnetwork_target = QNetwork(state_size, action_size, seed).to(device)
-        # self.optimizer = optim.Adam(self.qnetwork_local.parameters(), lr=LR)
+        # DDPG-Network
+        self.ddpg_network_local = DDPGNetwork(state_size, action_size, seed).to(device)
+        self.ddpg_network_target = DDPGNetwork(state_size, action_size, seed).to(device)
+        self.optimizer = optim.Adam(self.ddpg_network_local.parameters(), lr=LEARNING_RATE)
 
         # Replay memory
         self.memory = ReplayBuffer(action_size, BUFFER_SIZE, BATCH_SIZE, seed)
@@ -87,10 +93,20 @@ class DDPGAgent():
         # self.optimizer.step()
 
         # ------------------- update target network ------------------- #
-        self.soft_update(self.qnetwork_local, self.qnetwork_target, TAU) 
+        self.soft_update(self.ddpgnetwork_local, self.ddpgnetwork_target, TAU) 
 
-    def soft_update():
-        pass
+    def soft_update(self, local_model, target_model, tau):
+        """Soft update model parameters.
+        θ_target = τ*θ_local + (1 - τ)*θ_target
+
+        Params
+        ======
+            local_model (PyTorch model): weights will be copied from
+            target_model (PyTorch model): weights will be copied to
+            tau (float): interpolation parameter 
+        """
+        for target_param, local_param in zip(target_model.parameters(), local_model.parameters()):
+            target_param.data.copy_(tau*local_param.data + (1.0-tau)*target_param.data)
 
 
 def plot_scores(scores):
@@ -99,10 +115,52 @@ def plot_scores(scores):
     plt.plot(np.arange(len(scores)), scores)
     plt.ylabel('Score')
     plt.xlabel('Episode #')
-    plt.show()
+    plt.savefig("scores.png")
+    #plt.show()
+    
 
-def main():
-    print("Hello World")
+def ddpg(env, n_episodes=2000, max_t=1000, eps_start=1.0, eps_end=0.01, eps_decay=0.995):
+    scores = []                        # list containing scores from each episode
+    scores_window = deque(maxlen=100)  # last 100 scores
+    max_score_value = 0
+    eps = eps_start
+    brain_name = env.brain_names[0]
+    brain = env.brains[brain_name]
+    for i_episode in range(1, n_episodes+1):
+
+        env_info = env.reset(train_mode=True)[brain_name] 
+        state = env_info.vector_observations[0] 
+        score = 0
+        # for t in range(max_t):
+        #     action = agent.act(state, eps)
+            
+        #     env_info = env.step(action)[brain_name]
+        #     next_state = env_info.vector_observations[0]
+        #     reward = env_info.rewards[0]
+        #     done = env_info.local_done[0]
+            
+        #     agent.step(state, action, reward, next_state, done)
+        #     state = next_state
+        #     score += reward
+        #     if done:
+        #         break 
+
+
+        scores_window.append(score)
+        scores.append(score)
+        eps = max(eps_end, eps_decay*eps) 
+        print('\rEpisode {}\tAverage Score: {:.2f}'.format(i_episode, np.mean(scores_window)), end="")
+        if i_episode % 100 == 0:
+            print('\rEpisode {}\tAverage Score: {:.2f}'.format(i_episode, np.mean(scores_window)))
+        if np.mean(scores_window) > max_score_value + 3:
+            print('\nEnvironment saved in {:d} episodes!\tAverage Score: {:.2f}'.format(i_episode-100, np.mean(scores_window)))
+            torch.save(agent.ddpgnetwork_local.state_dict(), 'checkpoint_intermediate.pth')
+            max_score_value = np.mean(scores_window)
+        if np.mean(scores_window) >= 30:
+            print('\nEnvironment solved in {:d} episodes!\tAverage Score: {:.2f}'.format(i_episode-100, np.mean(scores_window)))
+            torch.save(agent.ddpgnetwork_local.state_dict(), 'checkpoint.pth')
+            break
+    return scores
 
 
 def take_random_action():
@@ -127,7 +185,7 @@ def take_random_action():
     print('The state for the first agent looks like:', states[0])
 
 
-    env_info = env.reset(train_mode=True)[brain_name]      # reset the environment    
+    env_info = env.reset(train_mode=False)[brain_name]     # reset the environment    
     states = env_info.vector_observations                  # get the current state (for each agent)
     scores = np.zeros(num_agents)                          # initialize the score (for each agent)
     while True:
@@ -146,4 +204,5 @@ def take_random_action():
 if __name__ == '__main__':
     env = UnityEnvironment(file_name='./Reacher_Linux/Reacher.x86_64')
     #take_random_action()
-    main()
+    scores = ddpg(env)
+    plot_scores(scores)
