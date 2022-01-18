@@ -12,6 +12,7 @@ from ReplayBuffer import ReplayBuffer
 LEARNING_RATE = 5e-4
 BUFFER_SIZE = int(1e5)
 BATCH_SIZE = 64
+TAU = 1e-3              # for soft update of target parameters
 device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
 
 class Network(nn.Module):
@@ -27,7 +28,7 @@ class Network(nn.Module):
         x = F.relu(self.fc1(state))
         x = F.relu(self.fc2(x))
         x = F.relu(self.fc3(x))
-        x = self.fc4(x) # TODO: Adapt the layers
+        x = self.fc4(x)
         return x
 
 class DDPGAgent():
@@ -78,7 +79,7 @@ class DDPGAgent():
         action = action.cpu().detach().numpy()
         #action += self.random_process.sample() #add some random noise
         action = np.clip(action, self.action_prob_low, self.action_prob_high)
-        # state = torch.from_numpy(state).float().unsqueeze(0).to(device)
+        return action
         # self.qnetwork_local.eval()
         # with torch.no_grad():
         #     action_values = self.qnetwork_local(state)
@@ -90,15 +91,12 @@ class DDPGAgent():
         # else:
         #     return random.choice(np.arange(self.action_size))
 
-    def learn(self, experiences, gamma):
-        """Update value parameters using given batch of experience tuples.
-
-        Params
-        ======
-            experiences (Tuple[torch.Variable]): tuple of (s, a, r, s', done) tuples 
-            gamma (float): discount factor
+    def learn(self):
+        """Update parameters.
         """
-        states, actions, rewards, next_states, dones = experiences
+        if len(self.memory) > BATCH_SIZE:
+            experiences = self.memory.sample()
+            states, actions, rewards, next_states, dones = experiences
 
         # # Get max predicted Q values (for next states) from target model
         # Q_targets_next = self.qnetwork_target(next_states).detach().max(1)[0].unsqueeze(1)
@@ -116,7 +114,7 @@ class DDPGAgent():
         # self.optimizer.step()
 
         # ------------------- update target network ------------------- #
-        self.soft_update(self.ddpgnetwork_local, self.ddpgnetwork_target, TAU) 
+        self.soft_update(self.network_local, self.network_target, TAU) 
 
     def soft_update(self, local_model, target_model, tau):
         """Soft update model parameters.
@@ -162,6 +160,7 @@ def ddpg(env, agent, n_episodes=2000, max_t=1000):
             agent.save_experience_in_replay_buffer(state, action, reward, next_state, done)
             state = next_state
             score += reward
+            agent.learn()
             # sample minibatch # Do we want to sample each timestep ???
             # set y_i
             # Update critic by minimizing loss
