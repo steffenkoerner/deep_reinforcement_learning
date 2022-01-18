@@ -56,13 +56,6 @@ class DDPGNetwork():
 
 class DDPGAgent():
     def __init__(self, state_size, action_size, seed):
-        """
-        Params
-        ======
-            state_size (int): dimension of each state
-            action_size (int): dimension of each action
-            seed (int): random seed
-        """
         self.state_size = state_size
         self.action_size = action_size
         self.seed = random.seed(seed)
@@ -74,29 +67,16 @@ class DDPGAgent():
         self.network_local = DDPGNetwork(state_size, action_size, seed)
         self.network_target = DDPGNetwork(state_size, action_size, seed)
         
-
         # Replay memory
         self.memory = ReplayBuffer(action_size, BUFFER_SIZE, BATCH_SIZE, seed)
 
     def save_experience_in_replay_buffer(self, state, action, reward, next_state, done):
         self.memory.add(state, action, reward, next_state, done)
         
-    def something_else():
-        pass
-        # # Learn every UPDATE_EVERY time steps.
-        # self.t_step = (self.t_step + 1) % UPDATE_EVERY
-        # if self.t_step == 0:
-        #     # If enough samples are available in memory, get random subset and learn
-        #     if len(self.memory) > BATCH_SIZE:
-        #         experiences = self.memory.sample()
-        #         self.learn(experiences, GAMMA)
+    def get_action_of_target_policy_for(self,state):
+        pass # same as the below one but using the target network
 
     def get_acion_per_current_policy_for(self, state):
-        """
-        Params
-        ======
-            state (array_like): current state
-        """
         state = torch.from_numpy(state).float().unsqueeze(0).to(device)
         action = self.network_local.actor_network(state)
         action = action.cpu().detach().numpy()
@@ -108,18 +88,22 @@ class DDPGAgent():
         #     action_values = self.qnetwork_local(state)
         # self.qnetwork_local.train()
 
-        # # Epsilon-greedy action selection
-        # if random.random() > eps:
-        #     return np.argmax(action_values.cpu().data.numpy())
-        # else:
-        #     return random.choice(np.arange(self.action_size))
-
     def learn(self):
         """Update parameters.
         """
         if len(self.memory) > BATCH_SIZE:
             experiences = self.memory.sample()
             states, actions, rewards, next_states, dones = experiences
+
+            self.network_local.critic_network.zero_grad()
+            #critic_loss.backward()
+            self.network_local.critic_optimizer.step()
+
+            self.network_local.actor_network.zero_grad()
+            #actor_loss.backward()
+            self.network_local.actor_optimizer.step()
+
+            self.soft_update(self.network_local, self.network_target, TAU) 
 
         # # Get max predicted Q values (for next states) from target model
         # Q_targets_next = self.qnetwork_target(next_states).detach().max(1)[0].unsqueeze(1)
@@ -132,15 +116,14 @@ class DDPGAgent():
         # # Compute loss
         # loss = F.mse_loss(Q_expected, Q_targets)
         # # Minimize the loss
-        # self.optimizer.zero_grad()
+        # self.optimizer.zero_grad() 
         # loss.backward()
         # self.optimizer.step()
 
-        # ------------------- update target network ------------------- #
-        self.soft_update(self.network_local, self.network_target, TAU) 
+        
 
     def soft_update(self, local_model, target_model, tau):
-        """Soft update model parameters.
+        """Soft update model parameters for actor and critic of target network.
         θ_target = τ*θ_local + (1 - τ)*θ_target
 
         Params
@@ -149,9 +132,11 @@ class DDPGAgent():
             target_model (PyTorch model): weights will be copied to
             tau (float): interpolation parameter 
         """
-        pass
-        # for target_param, local_param in zip(target_model.parameters(), local_model.parameters()):
-        #     target_param.data.copy_(tau*local_param.data + (1.0-tau)*target_param.data)
+        for target_param, local_param in zip(self.network_target.actor_network.parameters(), self.network_local.actor_network.parameters()):
+            target_param.data.copy_(tau*local_param.data + (1.0-tau)*target_param.data)
+
+        for target_param, local_param in zip(self.network_target.critic_network.parameters(), self.network_local.critic_network.parameters()):
+            target_param.data.copy_(tau*local_param.data + (1.0-tau)*target_param.data)
 
 
 def plot_scores(scores):
@@ -200,11 +185,13 @@ def ddpg(env, agent, n_episodes=2000, max_t=1000):
             print('\rEpisode {}\tAverage Score: {:.2f}'.format(i_episode, np.mean(scores_window)))
         if np.mean(scores_window) > max_score_value + 3:
             print('\nEnvironment saved in {:d} episodes!\tAverage Score: {:.2f}'.format(i_episode-100, np.mean(scores_window)))
-            torch.save(agent.ddpgnetwork_local.state_dict(), 'checkpoint_intermediate.pth')
+            torch.save(agent.network_local.actor_network.state_dict(), 'intermediate_weight_actor.pth')
+            torch.save(agent.network_local.critic_network.state_dict(), 'intermediate_weight_critic.pth')
             max_score_value = np.mean(scores_window)
         if np.mean(scores_window) >= 30:
             print('\nEnvironment solved in {:d} episodes!\tAverage Score: {:.2f}'.format(i_episode-100, np.mean(scores_window)))
-            torch.save(agent.ddpgnetwork_local.state_dict(), 'checkpoint.pth')
+            torch.save(agent.network_local.actor_network.state_dict(), 'final_weight_actor.pth')
+            torch.save(agent.network_local.critic_network.state_dict(), 'final_weight_critic.pth')
             break
     return scores
 
