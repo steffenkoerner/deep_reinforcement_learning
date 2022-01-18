@@ -15,9 +15,24 @@ BATCH_SIZE = 64
 TAU = 1e-3              # for soft update of target parameters
 device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
 
-class Network(nn.Module):
+
+class CriticNetwork(nn.Module):
     def __init__(self, state_size, action_size, seed, fc1_units = 64, fc2_units = 64):
-        super(Network, self).__init__()
+        super(CriticNetwork, self).__init__()
+        self.seed = torch.manual_seed(seed)
+        self.fc1 = nn.Linear(state_size, fc1_units)
+        self.fc2 = nn.Linear(fc1_units, fc2_units)
+        self.fc3 = nn.Linear(fc2_units, action_size)
+
+    def forward(self, state):
+        x = F.relu(self.fc1(state))
+        x = F.relu(self.fc2(x))
+        x = F.relu(self.fc3(x))
+        return x
+
+class ActorNetwork(nn.Module):
+    def __init__(self, state_size, action_size, seed, fc1_units = 64, fc2_units = 64):
+        super(ActorNetwork, self).__init__()
         self.seed = torch.manual_seed(seed)
         self.fc1 = nn.Linear(state_size, fc1_units)
         self.fc2 = nn.Linear(fc1_units, fc2_units)
@@ -30,6 +45,14 @@ class Network(nn.Module):
         x = F.relu(self.fc3(x))
         x = self.fc4(x)
         return x
+
+class DDPGNetwork():
+    def __init__(self, state_size, action_size, seed):
+        self.actor_network = ActorNetwork(state_size, action_size, seed).to(device)
+        self.critic_network = CriticNetwork(state_size, action_size, seed).to(device)
+        self.actor_optimizer = optim.Adam(self.actor_network.parameters(), lr=LEARNING_RATE)
+        self.critic_optimizer = optim.Adam(self.critic_network.parameters(), lr=LEARNING_RATE)
+
 
 class DDPGAgent():
     def __init__(self, state_size, action_size, seed):
@@ -48,9 +71,9 @@ class DDPGAgent():
         #self.state = None # Does it make sense to have this variable and if its none than initalise the network correspondingly or directly here
 
         # DDPG-Network
-        self.network_local = Network(state_size, action_size, seed).to(device)
-        self.network_target = Network(state_size, action_size, seed).to(device)
-        self.optimizer = optim.Adam(self.network_local.parameters(), lr=LEARNING_RATE)
+        self.network_local = DDPGNetwork(state_size, action_size, seed)
+        self.network_target = DDPGNetwork(state_size, action_size, seed)
+        
 
         # Replay memory
         self.memory = ReplayBuffer(action_size, BUFFER_SIZE, BATCH_SIZE, seed)
@@ -75,7 +98,7 @@ class DDPGAgent():
             state (array_like): current state
         """
         state = torch.from_numpy(state).float().unsqueeze(0).to(device)
-        action = self.network_local(state)
+        action = self.network_local.actor_network(state)
         action = action.cpu().detach().numpy()
         #action += self.random_process.sample() #add some random noise
         action = np.clip(action, self.action_prob_low, self.action_prob_high)
@@ -126,8 +149,9 @@ class DDPGAgent():
             target_model (PyTorch model): weights will be copied to
             tau (float): interpolation parameter 
         """
-        for target_param, local_param in zip(target_model.parameters(), local_model.parameters()):
-            target_param.data.copy_(tau*local_param.data + (1.0-tau)*target_param.data)
+        pass
+        # for target_param, local_param in zip(target_model.parameters(), local_model.parameters()):
+        #     target_param.data.copy_(tau*local_param.data + (1.0-tau)*target_param.data)
 
 
 def plot_scores(scores):
