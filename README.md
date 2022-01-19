@@ -18,6 +18,7 @@ The projects that are contained in this repro can be found below.  All of the pr
 
 * [Cheatsheet](https://github.com/steffenkoerner/deep_reinforcement_learning/blob/main/cheatsheet.pdf): Contains a summary of all important reinforcement learning algorithms
 * [Collection of Deep Learning Links](https://docs.google.com/spreadsheets/d/1NZtIxDWiJ_B0UKhIDUk-wTZAT3Fxfh-fGwcQKXg1bQU/edit#gid=0)
+* [Open AI Deep Reinforcement Learning Literature](https://spinningup.openai.com/en/latest/index.html)
 
 ### Deep Reinforcement Learning
 - [Deep Reinforcement Learning: Pong from Pixels](http://karpathy.github.io/2016/05/31/rl/)
@@ -102,7 +103,9 @@ The projects that are contained in this repro can be found below.  All of the pr
 - [Pix2Pix](https://affinelayer.com/pixsrv/)
 - [Cycle GAN](https://github.com/junyanz/pytorch-CycleGAN-and-pix2pix)
 
-
+### Environments
+- [OpenAI gyms](https://gym.openai.com/)
+- [Unity ML Engine](https://github.com/Unity-Technologies/ml-agents)
 ### Competitions
 - [kaggle](https://www.kaggle.com/)
 
@@ -157,6 +160,7 @@ The projects that are contained in this repro can be found below.  All of the pr
   - [Pytorch autograd](https://towardsdatascience.com/pytorch-autograd-understanding-the-heart-of-pytorchs-magic-2686cd94ec95#:~:text=Gradients%20are%20calculated%20by%20tracing,way%20using%20the%20chain%20rule.)
   - [Pytorch Autograd Youtube Video](https://www.youtube.com/watch?v=MswxJw-8PvE)
   - [Deriving Policy Gradient](https://medium.com/@thechrisyoon/deriving-policy-gradients-and-implementing-reinforce-f887949bd63)
+  - [Using Keras and Deep Deterministic Policy Gradient to play TORCS](https://yanpanlau.github.io/2016/10/11/Torcs-Keras.html)
 
   ### Other github resources
   - [RL-Adventure](https://github.com/higgsfield/RL-Adventure)
