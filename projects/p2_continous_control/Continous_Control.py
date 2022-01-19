@@ -99,16 +99,22 @@ class DDPGAgent():
             q_value_in_next_state_with_action = self.network_target.critic_network(next_state_and_actions)
             y = rewards + (1 - dones) * gamma * q_value_in_next_state_with_action
             state_and_actions = torch.cat((states, actions), 1)
-            q_value_in_current_state_with_action = self.network_target.critic_network(state_and_actions)
+    
+            q_value_in_current_state_with_action = self.network_local.critic_network(state_and_actions)
 
-            critic_loss = (y - q_value_in_current_state_with_action).pow(2).sum(-1).mean()
+            critic_loss = F.mse_loss(y,q_value_in_current_state_with_action)
 
             self.network_local.critic_network.zero_grad()
             critic_loss.backward()
             self.network_local.critic_optimizer.step()
 
+            # TODO_Calculate_Actor_Critic_Loss
+            actor_actions_local = self.network_local.actor_network(states)
+            local_state_and_actions = torch.cat((states, actor_actions_local), 1)
+            actor_loss = self.network_local.critic_network(local_state_and_actions)
+            actor_loss = actor_loss.sum()
             self.network_local.actor_network.zero_grad()
-            #actor_loss.backward()
+            actor_loss.backward()
             self.network_local.actor_optimizer.step()
 
             self.soft_update(self.network_local, self.network_target, TAU) 
@@ -147,13 +153,14 @@ class DDPGAgent():
             target_param.data.copy_(tau*local_param.data + (1.0-tau)*target_param.data)
 
 
-def plot_scores(scores):
+def plot_scores(scores, number):
     fig = plt.figure()
     ax = fig.add_subplot(111)
     plt.plot(np.arange(len(scores)), scores)
     plt.ylabel('Score')
     plt.xlabel('Episode #')
-    plt.savefig("scores.png")
+    figure_name = "scores_" + str(number) +".png"
+    plt.savefig(figure_name)
     #plt.show()
     
 
@@ -164,7 +171,6 @@ def ddpg(env, agent, n_episodes=2000, max_t=1000, gamma=0.9):
     brain_name = env.brain_names[0]
     brain = env.brains[brain_name]
     for i_episode in range(1, n_episodes+1):
-
         env_info = env.reset(train_mode=True)[brain_name] 
         state = env_info.vector_observations[0] 
         score = 0
@@ -181,10 +187,12 @@ def ddpg(env, agent, n_episodes=2000, max_t=1000, gamma=0.9):
                 agent.learn(gamma)
             if done:
                 break 
-
-
+        
         scores_window.append(score)
         scores.append(score)
+        if i_episode % 200 == 0:
+            plot_scores(scores,i_episode)
+
         print('\rEpisode {}\tAverage Score: {:.2f}'.format(i_episode, np.mean(scores_window)), end="")
         if i_episode % 100 == 0:
             print('\rEpisode {}\tAverage Score: {:.2f}'.format(i_episode, np.mean(scores_window)))
@@ -247,5 +255,5 @@ if __name__ == '__main__':
     state_size = brain.vector_observation_space_size
 
     agent = DDPGAgent(state_size= state_size, action_size = action_size, seed = 0)
-    scores = ddpg(env,agent, n_episodes=1)
-    plot_scores(scores)
+    scores = ddpg(env,agent, n_episodes=5000)
+    plot_scores(scores,0)
