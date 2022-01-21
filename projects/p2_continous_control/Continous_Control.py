@@ -73,11 +73,11 @@ class DDPGAgent():
         #self.state = None # Does it make sense to have this variable and if its none than initalise the network correspondingly or directly here
 
         # DDPG-Network
-        self.network_local = DDPGNetwork(state_size, action_size, seed)
-        self.network_target = DDPGNetwork(state_size, action_size, seed)
+        self.local_network = DDPGNetwork(state_size, action_size, seed)
+        self.target_network = DDPGNetwork(state_size, action_size, seed)
         
         # Replay memory
-        self.memory = ReplayBuffer(action_size, BUFFER_SIZE, BATCH_SIZE, seed)
+        self.memory = ReplayBuffer(action_size=action_size, buffer_size=BUFFER_SIZE, batch_size=BATCH_SIZE, seed=seed)
 
     def save_experience_in_replay_buffer(self, state, action, reward, next_state, done):
         self.memory.add(state, action, reward, next_state, done)
@@ -93,8 +93,8 @@ class DDPGAgent():
             actions = np.clip(actions, self.action_lowest_value, self.action_highest_value)   
         else:       
             state = torch.from_numpy(state).float().unsqueeze(0).to(device)
-            actions = self.network_local.actor_network(state)
-            actions = actions.cpu().detach().numpy()
+            actions = self.local_network.actor(state)
+            actions = actions.detach().numpy()
             noise = self.gaussian_noise()
             actions = np.clip(actions + noise, self.action_lowest_value, self.action_highest_value)
         return actions
@@ -107,20 +107,20 @@ class DDPGAgent():
             experiences = self.memory.sample()
             states, actions, rewards, next_states, dones = experiences
 
-            y = rewards + (1 - dones) * gamma * self.network_target.critic(next_states, self.network_target.actor(next_states))
-            critic_loss = F.mse_loss(y,self.network_local.critic(states,actions))
-            self.network_local.critic_network.zero_grad()
+            y = rewards + (1 - dones) * gamma * self.target_network.critic(next_states, self.target_network.actor(next_states))
+            critic_loss = F.mse_loss(y,self.local_network.critic(states,actions).detach())
+            self.local_network.critic_network.zero_grad()
             critic_loss.backward()
-            self.network_local.critic_optimizer.step()
+            self.local_network.critic_optimizer.step()
 
             # TODO_Calculate_Actor_Critic_Loss
-            actor_loss = self.network_local.critic(states,self.network_local.actor(states))
-            actor_loss = actor_loss.sum()
-            self.network_local.actor_network.zero_grad()
+            actor_loss = self.local_network.critic(states.detach(),self.local_network.actor(states))
+            actor_loss = actor_loss.mean()
+            self.local_network.actor_network.zero_grad()
             actor_loss.backward()
-            self.network_local.actor_optimizer.step()
+            self.local_network.actor_optimizer.step()
 
-            self.soft_update(self.network_local, self.network_target, TAU) 
+            self.soft_update(self.local_network, self.target_network, TAU) 
       
 
     def soft_update(self, local_model, target_model, tau):
@@ -133,10 +133,10 @@ class DDPGAgent():
             target_model (PyTorch model): weights will be copied to
             tau (float): interpolation parameter 
         """
-        for target_param, local_param in zip(self.network_target.actor_network.parameters(), self.network_local.actor_network.parameters()):
+        for target_param, local_param in zip(self.target_network.actor_network.parameters(), self.local_network.actor_network.parameters()):
             target_param.data.copy_(tau*local_param.data + (1.0-tau)*target_param.data)
 
-        for target_param, local_param in zip(self.network_target.critic_network.parameters(), self.network_local.critic_network.parameters()):
+        for target_param, local_param in zip(self.target_network.critic_network.parameters(), self.local_network.critic_network.parameters()):
             target_param.data.copy_(tau*local_param.data + (1.0-tau)*target_param.data)
 
 
@@ -184,13 +184,13 @@ def ddpg(env, agent, n_episodes=2000, max_t=1000, gamma=0.9):
             print('\rEpisode {}\tAverage Score: {:.2f}'.format(i_episode, np.mean(scores_window)))
         if np.mean(scores_window) > max_score_value + 3:
             print('\nEnvironment saved in {:d} episodes!\tAverage Score: {:.2f}'.format(i_episode-100, np.mean(scores_window)))
-            torch.save(agent.network_local.actor_network.state_dict(), 'intermediate_weight_actor.pth')
-            torch.save(agent.network_local.critic_network.state_dict(), 'intermediate_weight_critic.pth')
+            torch.save(agent.local_network.actor_network.state_dict(), 'intermediate_weight_actor.pth')
+            torch.save(agent.local_network.critic_network.state_dict(), 'intermediate_weight_critic.pth')
             max_score_value = np.mean(scores_window)
         if np.mean(scores_window) >= 30:
             print('\nEnvironment solved in {:d} episodes!\tAverage Score: {:.2f}'.format(i_episode-100, np.mean(scores_window)))
-            torch.save(agent.network_local.actor_network.state_dict(), 'final_weight_actor.pth')
-            torch.save(agent.network_local.critic_network.state_dict(), 'final_weight_critic.pth')
+            torch.save(agent.local_network.actor_network.state_dict(), 'final_weight_actor.pth')
+            torch.save(agent.local_network.critic_network.state_dict(), 'final_weight_critic.pth')
             break
     return scores
 
@@ -240,6 +240,6 @@ if __name__ == '__main__':
     action_size = brain.vector_action_space_size
     state_size = brain.vector_observation_space_size
 
-    agent = DDPGAgent(state_size= state_size, action_size = action_size, seed = 0 , warmup = 0)
+    agent = DDPGAgent(state_size= state_size, action_size = action_size, seed = 0 , warmup = 50)
     scores = ddpg(env,agent, n_episodes=5000)
     plot_scores(scores,0)
