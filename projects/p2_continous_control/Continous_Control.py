@@ -9,20 +9,21 @@ import torch.nn.functional as F
 import torch.optim as optim
 from ReplayBuffer import ReplayBuffer, GaussianNoise
 
-LEARNING_RATE = 5e-4
-BUFFER_SIZE = int(1e5)
+LEARNING_RATE = 1e-3
+BUFFER_SIZE = int(1e6)
 BATCH_SIZE = 64
 TAU = 1e-3              # for soft update of target parameters
 device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
 
 
 class CriticNetwork(nn.Module):
-    def __init__(self, state_size, action_size, seed, fc1_units = 64, fc2_units = 64):
+    def __init__(self, state_size, action_size, seed, fc1_units = 400, fc2_units = 300):
         super(CriticNetwork, self).__init__()
         self.seed = torch.manual_seed(seed)
         self.fc1 = nn.Linear(state_size + action_size, fc1_units)
         self.fc2 = nn.Linear(fc1_units, fc2_units)
         self.fc3 = nn.Linear(fc2_units, 1) # Needs to be 1 as this is the max(Q(s,a)) that is learned
+        self.to(device)
 
     def forward(self, state):
         x = F.relu(self.fc1(state))
@@ -31,18 +32,18 @@ class CriticNetwork(nn.Module):
         return x
 
 class ActorNetwork(nn.Module):
-    def __init__(self, state_size, action_size, seed, fc1_units = 64, fc2_units = 64):
+    def __init__(self, state_size, action_size, seed, fc1_units = 400, fc2_units = 300):
         super(ActorNetwork, self).__init__()
         self.seed = torch.manual_seed(seed)
         self.fc1 = nn.Linear(state_size, fc1_units)
         self.fc2 = nn.Linear(fc1_units, fc2_units)
         self.fc3 = nn.Linear(fc2_units, action_size)
+        self.to(device)
 
     def forward(self, state):
         x = F.relu(self.fc1(state))
         x = F.relu(self.fc2(x))
         x = F.relu(self.fc3(x))
-
         return F.tanh(x)
 
 class DDPGNetwork():
@@ -51,16 +52,24 @@ class DDPGNetwork():
         self.critic_network = CriticNetwork(state_size, action_size, seed).to(device)
         self.actor_optimizer = optim.Adam(self.actor_network.parameters(), lr=LEARNING_RATE)
         self.critic_optimizer = optim.Adam(self.critic_network.parameters(), lr=LEARNING_RATE)
+        
+
+    def actor(self, state):
+        return self.actor_network(state)
+    
+    def critic(self, states,actions):
+        return self.critic_network(torch.cat((states, actions), 1))
 
 
 class DDPGAgent():
-    def __init__(self, state_size, action_size, seed):
+    def __init__(self, state_size, action_size, seed, warmup = 100):
         self.state_size = state_size
         self.action_size = action_size
         self.seed = random.seed(seed)
         self.action_lowest_value = -1
         self.action_highest_value = 1
-        self.gaussian_noise = GaussianNoise(action_size, 1, 0.01,10000) 
+        self.warump = warmup
+        self.gaussian_noise = GaussianNoise(size=action_size, std_start=1, std_end=0.1,steps=100) 
         #self.state = None # Does it make sense to have this variable and if its none than initalise the network correspondingly or directly here
 
         # DDPG-Network
@@ -78,12 +87,17 @@ class DDPGAgent():
 
     def get_acion_per_current_policy_for(self, state , number_episode):
         # TODO: Does it make sense to normalise the input layer as in the paper
-        state = torch.from_numpy(state).float().unsqueeze(0).to(device)
-        action = self.network_local.actor_network(state)
-        action = action.cpu().detach().numpy()
-        noise = self.gaussian_noise()
-        action = np.clip(action + noise, self.action_lowest_value, self.action_highest_value)
-        return action
+
+        if number_episode < self.warump:
+            actions = np.random.randn(action_size) 
+            actions = np.clip(actions, self.action_lowest_value, self.action_highest_value)   
+        else:       
+            state = torch.from_numpy(state).float().unsqueeze(0).to(device)
+            actions = self.network_local.actor_network(state)
+            actions = actions.cpu().detach().numpy()
+            noise = self.gaussian_noise()
+            actions = np.clip(actions + noise, self.action_lowest_value, self.action_highest_value)
+        return actions
 
 
     def learn(self, gamma):
@@ -93,46 +107,21 @@ class DDPGAgent():
             experiences = self.memory.sample()
             states, actions, rewards, next_states, dones = experiences
 
-            actor_actions = self.network_target.actor_network(next_states)
-            next_state_and_actions = torch.cat((next_states, actor_actions), 1)
-            q_value_in_next_state_with_action = self.network_target.critic_network(next_state_and_actions)
-            y = rewards + (1 - dones) * gamma * q_value_in_next_state_with_action
-            state_and_actions = torch.cat((states, actions), 1)
-            q_value_in_current_state_with_action = self.network_local.critic_network(state_and_actions)
-
-            critic_loss = F.mse_loss(y,q_value_in_current_state_with_action)
-
+            y = rewards + (1 - dones) * gamma * self.network_target.critic(next_states, self.network_target.actor(next_states))
+            critic_loss = F.mse_loss(y,self.network_local.critic(states,actions))
             self.network_local.critic_network.zero_grad()
             critic_loss.backward()
             self.network_local.critic_optimizer.step()
 
             # TODO_Calculate_Actor_Critic_Loss
-            actor_actions_local = self.network_local.actor_network(states)
-            local_state_and_actions = torch.cat((states, actor_actions_local), 1)
-            actor_loss = self.network_local.critic_network(local_state_and_actions)
+            actor_loss = self.network_local.critic(states,self.network_local.actor(states))
             actor_loss = actor_loss.sum()
             self.network_local.actor_network.zero_grad()
             actor_loss.backward()
             self.network_local.actor_optimizer.step()
 
             self.soft_update(self.network_local, self.network_target, TAU) 
-
-        # # Get max predicted Q values (for next states) from target model
-        # Q_targets_next = self.qnetwork_target(next_states).detach().max(1)[0].unsqueeze(1)
-        # # Compute Q targets for current states 
-        # Q_targets = rewards + (gamma * Q_targets_next * (1 - dones))
-
-        # # Get expected Q values from local model
-        # Q_expected = self.qnetwork_local(states).gather(1, actions)
-
-        # # Compute loss
-        # loss = F.mse_loss(Q_expected, Q_targets)
-        # # Minimize the loss
-        # self.optimizer.zero_grad() 
-        # loss.backward()
-        # self.optimizer.step()
-
-        
+      
 
     def soft_update(self, local_model, target_model, tau):
         """Soft update model parameters for actor and critic of target network.
@@ -181,8 +170,7 @@ def ddpg(env, agent, n_episodes=2000, max_t=1000, gamma=0.9):
             agent.save_experience_in_replay_buffer(state, action, reward, next_state, done)
             state = next_state
             score += reward
-            if t%20 == 0:
-                agent.learn(gamma)
+            agent.learn(gamma)
             if done:
                 break 
         
@@ -252,6 +240,6 @@ if __name__ == '__main__':
     action_size = brain.vector_action_space_size
     state_size = brain.vector_observation_space_size
 
-    agent = DDPGAgent(state_size= state_size, action_size = action_size, seed = 0)
+    agent = DDPGAgent(state_size= state_size, action_size = action_size, seed = 0 , warmup = 0)
     scores = ddpg(env,agent, n_episodes=5000)
     plot_scores(scores,0)
