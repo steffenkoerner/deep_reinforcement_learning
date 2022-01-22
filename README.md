@@ -13,6 +13,7 @@ The projects that are contained in this repro can be found below.  All of the pr
 
 * [Navigation](https://github.com/steffenkoerner/deep_reinforcement_learning/tree/main/projects/p1_navigation): This projects trains an agent to collect yellow bananas while avoiding blue bananas.
 * [REINFORCE Algorithm](https://github.com/steffenkoerner/deep_reinforcement_learning/tree/main/projects/reinforce_algorithm): This project contains the implementation of the REINFORCE algorithm to solve the OpenAI CartPole environment
+* [DDPG Algorithm](https://github.com/steffenkoerner/deep_reinforcement_learning/tree/main/projects/p2_continous_control): This project contains the implementation of the DDPG to solve the unity Reacher environment
 
 ### Additinal Resources
 
