@@ -23,7 +23,6 @@ class CriticNetwork(nn.Module):
         self.fc1 = nn.Linear(state_size + action_size, fc1_units)
         self.fc2 = nn.Linear(fc1_units, fc2_units)
         self.fc3 = nn.Linear(fc2_units, 1) # Needs to be 1 as this is the max(Q(s,a)) that is learned
-        #self.reset_parameters()
         self.to(device)
 
     def forward(self, state):
@@ -39,7 +38,6 @@ class ActorNetwork(nn.Module):
         self.fc1 = nn.Linear(state_size, fc1_units)
         self.fc2 = nn.Linear(fc1_units, fc2_units)
         self.fc3 = nn.Linear(fc2_units, action_size)
-        #self.reset_parameters()
         self.to(device)
 
     def forward(self, state):
@@ -72,7 +70,6 @@ class DDPGAgent():
         self.action_highest_value = 1
         self.warump = warmup
         self.gaussian_noise = GaussianNoise(size=action_size, std_start=0.2, std_end=0.01,steps=1000) 
-        #self.state = None # Does it make sense to have this variable and if its none than initalise the network correspondingly or directly here
 
         # DDPG-Network
         self.local_network = DDPGNetwork(state_size, action_size, seed)
@@ -109,7 +106,6 @@ class DDPGAgent():
             critic_loss.backward()
             self.local_network.critic_optimizer.step()
 
-            # TODO_Calculate_Actor_Critic_Loss
             actor_loss = self.local_network.critic(states.detach(), self.local_network.actor(states))
             actor_loss = -actor_loss.mean()
             self.local_network.actor_network.zero_grad()
@@ -147,7 +143,6 @@ def plot_scores(scores, number):
     plt.xlabel('Episode #')
     figure_name = "scores_" + str(number) +".png"
     plt.savefig(figure_name)
-    #plt.show()
     
 
 def ddpg(env, agent, n_episodes=2000, max_t=1000, gamma=0.9):
@@ -193,47 +188,8 @@ def ddpg(env, agent, n_episodes=2000, max_t=1000, gamma=0.9):
     return scores
 
 
-def take_random_action():
-    
-    brain_name = env.brain_names[0]
-    brain = env.brains[brain_name]
-    # reset the environment
-    env_info = env.reset(train_mode=True)[brain_name]
-
-    # number of agents
-    num_agents = len(env_info.agents)
-    print('Number of agents:', num_agents)
-
-    # size of each action
-    action_size = brain.vector_action_space_size
-    print('Size of each action:', action_size)
-
-    # examine the state space 
-    states = env_info.vector_observations
-    state_size = states.shape[1]
-    print('There are {} agents. Each observes a state with length: {}'.format(states.shape[0], state_size))
-    print('The state for the first agent looks like:', states[0])
-
-
-    env_info = env.reset(train_mode=False)[brain_name]     # reset the environment    
-    states = env_info.vector_observations                  # get the current state (for each agent)
-    scores = np.zeros(num_agents)                          # initialize the score (for each agent)
-    while True:
-        actions = np.random.randn(num_agents, action_size) # select an action (for each agent)
-        actions = np.clip(actions, -1, 1)                  # all actions between -1 and 1
-        env_info = env.step(actions)[brain_name]           # send all actions to tne environment
-        next_states = env_info.vector_observations         # get next state (for each agent)
-        rewards = env_info.rewards                         # get reward (for each agent)
-        dones = env_info.local_done                        # see if episode finished
-        scores += env_info.rewards                         # update the score (for each agent)
-        states = next_states                               # roll over states to next time step
-        if np.any(dones):                                  # exit loop if episode finished
-            break
-    print('Total score (averaged over agents) this episode: {}'.format(np.mean(scores)))
-
 if __name__ == '__main__':
     env = UnityEnvironment(file_name='/home/steffen/workspace/deep_reinforcement_learning/projects/p2_continous_control/Reacher_Linux/Reacher.x86_64')
-    #take_random_action()
     brain = env.brains[env.brain_names[0]]
     action_size = brain.vector_action_space_size
     state_size = brain.vector_observation_space_size
