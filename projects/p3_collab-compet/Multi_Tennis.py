@@ -21,7 +21,7 @@ class CriticNetwork(nn.Module):
     def __init__(self, state_size, action_size, seed, fc1_units = 400, fc2_units = 300):
         super(CriticNetwork, self).__init__()
         self.seed = torch.manual_seed(seed)
-        self.fc1 = nn.Linear(state_size + action_size, fc1_units)
+        self.fc1 = nn.Linear(state_size, fc1_units)
         self.fc2 = nn.Linear(fc1_units, fc2_units)
         self.fc3 = nn.Linear(fc2_units, 1) # Needs to be 1 as this is the max(Q(s,a)) that is learned
         self.to(device)
@@ -59,7 +59,9 @@ class DDPGNetwork():
         return self.actor_network(state)
     
     def critic(self, states,actions):
-        return self.critic_network(torch.cat((states, actions), 1))
+        sta = states[0]
+        sta = states[1]
+        return self.critic_network(torch.cat((states[0], states[1] ,actions[0], actions[1]), 1))
 
 
 
@@ -155,7 +157,39 @@ class MADDPGAgent():
         self.learn(gamma)
     
     def learn(self, gamma):
-        pass
+        if len(self.memory) > BATCH_SIZE:
+            experiences = self.memory.sample()
+
+            states, actions, rewards, next_states, dones = experiences
+
+
+            for i in range(0,2):
+                state = states[i]
+                action = actions[i]
+                reward = rewards[i]
+                next_state = next_states[i]
+                done = dones[i]
+
+                y = reward + (1 - done) * gamma * self.agents[i].target_network.critic(next_states, [self.agents[0].target_network.actor(next_states[0]),self.agents[1].target_network.actor(next_states[1])])
+                critic_loss = F.mse_loss(y , self.agents[i].local_network.critic(states,actions)) 
+                self.agents[i].local_network.critic_network.zero_grad()
+                critic_loss.backward()
+                self.agents[i].local_network.critic_optimizer.step()
+
+            ######################### old stuff #######  
+            # y = rewards + (1 - dones) * gamma * self.target_network.critic(next_states, self.target_network.actor(next_states))
+            # critic_loss = F.mse_loss(y , self.local_network.critic(states,actions))
+            # self.local_network.critic_network.zero_grad()
+            # critic_loss.backward()
+            # self.local_network.critic_optimizer.step()
+
+            # actor_loss = self.local_network.critic(states.detach(), self.local_network.actor(states))
+            # actor_loss = -actor_loss.mean()
+            # self.local_network.actor_network.zero_grad()
+            # actor_loss.backward()
+            # self.local_network.actor_optimizer.step()
+
+            # self.soft_update(self.local_network, self.target_network, TAU) 
 
     def soft_update(self, local_model, target_model, tau):
         for agent in self.agents:
