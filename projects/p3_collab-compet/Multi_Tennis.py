@@ -76,8 +76,6 @@ class DDPGAgent():
         self.local_network = DDPGNetwork(actor_input_size, actor_output_size, critic_input_size, critic_output_size, seed)
         self.target_network = DDPGNetwork(actor_input_size, actor_output_size, critic_input_size, critic_output_size, seed)
         
-        # Replay memory
-        # self.memory = ReplayBuffer(action_size=action_size, buffer_size=BUFFER_SIZE, batch_size=BATCH_SIZE, seed=seed)   
         
     def get_acion_per_current_policy_for(self, state , number_episode, noise=0):
         if number_episode < self.warump:
@@ -93,31 +91,6 @@ class DDPGAgent():
             actions = np.clip(actions + noise_applied, self.action_lowest_value, self.action_highest_value)
         return actions
 
-
-    # def learn(self, gamma):
-    #     """Update parameters.
-    #     """
-    #     if len(self.memory) > BATCH_SIZE:
-    #         experiences = self.memory.sample()
-    #         states, actions, rewards, next_states, dones = experiences
-
-    #         y = rewards + (1 - dones) * gamma * self.target_network.critic(next_states, self.target_network.actor(next_states))
-    #         critic_loss = F.mse_loss(y , self.local_network.critic(states,actions))
-    #         self.local_network.critic_network.zero_grad()
-    #         critic_loss.backward()
-    #         self.local_network.critic_optimizer.step()
-
-    #         actor_loss = self.local_network.critic(states.detach(), self.local_network.actor(states))
-    #         actor_loss = -actor_loss.mean()
-    #         self.local_network.actor_network.zero_grad()
-    #         actor_loss.backward()
-    #         self.local_network.actor_optimizer.step()
-
-    #         self.soft_update(self.local_network, self.target_network, TAU) 
-
-    # def step(self,state, action, reward, next_state, done, gamma):
-    #     self.memory.add(state, action, reward, next_state, done)
-    #     self.learn(gamma)
 
     def soft_update(self, tau):
         """Soft update model parameters for actor and critic of target network.
@@ -183,17 +156,17 @@ def maddpg(env, agent, n_episodes=2000, max_t=1000, gamma=0.9):
             print('\rEpisode {}\tAverage Score: {:.2f}'.format(i_episode, np.mean(scores_window)))
         if np.mean(scores_window) > max_score_value + 0.1:
             print('\nEnvironment saved in {:d} episodes!\tAverage Score: {:.2f}'.format(i_episode-100, np.mean(scores_window)))
-            torch.save(agent1.local_network.actor_network.state_dict(), 'intermediate_weight_actor1.pth')
-            torch.save(agent1.local_network.critic_network.state_dict(), 'intermediate_weight_critic1.pth')
-            torch.save(agent2.local_network.actor_network.state_dict(), 'intermediate_weight_actor2.pth')
-            torch.save(agent2.local_network.critic_network.state_dict(), 'intermediate_weight_critic2.pth')
+            torch.save(agent.agents[0].local_network.actor_network.state_dict(), 'intermediate_weight_actor1.pth')
+            torch.save(agent.agents[0].local_network.critic_network.state_dict(), 'intermediate_weight_critic1.pth')
+            torch.save(agent.agents[1].local_network.actor_network.state_dict(), 'intermediate_weight_actor2.pth')
+            torch.save(agent.agents[1].local_network.critic_network.state_dict(), 'intermediate_weight_critic2.pth')
             max_score_value = np.mean(scores_window)
         if np.mean(scores_window) >= 30:
             print('\nEnvironment solved in {:d} episodes!\tAverage Score: {:.2f}'.format(i_episode-100, np.mean(scores_window)))
-            torch.save(agent1.local_network.actor_network.state_dict(), 'final_weight_actor1.pth')
-            torch.save(agent1.local_network.critic_network.state_dict(), 'final_weight_critic1.pth')
-            torch.save(agent2.local_network.actor_network.state_dict(), 'final_weight_actor2.pth')
-            torch.save(agent2.local_network.critic_network.state_dict(), 'final_weight_critic2.pth')
+            torch.save(agent.agents[0].local_network.actor_network.state_dict(), 'final_weight_actor1.pth')
+            torch.save(agent.agents[0].local_network.critic_network.state_dict(), 'final_weight_critic1.pth')
+            torch.save(agent.agents[1].local_network.actor_network.state_dict(), 'final_weight_actor2.pth')
+            torch.save(agent.agents[1].local_network.critic_network.state_dict(), 'final_weight_critic2.pth')
             break
     return scores
 
@@ -207,7 +180,7 @@ class MADDPGAgent():
     
     def get_acion_per_current_policy_for(self, all_states , number_episode, noise):
         action0 = self.agents[0].get_acion_per_current_policy_for(all_states[0],number_episode,noise)
-        action1 = self.agents[0].get_acion_per_current_policy_for(all_states[0],number_episode,noise)
+        action1 = self.agents[1].get_acion_per_current_policy_for(all_states[1],number_episode,noise)
         actions = np.vstack((action0,action1))
         return actions
 
@@ -219,9 +192,38 @@ class MADDPGAgent():
         """Update parameters.
         """
         if len(self.memory) > BATCH_SIZE:
-            experiences = self.memory.sample()
-            states0, states1, actions0, action1, rewards, next_states0, next_states1, dones = experiences
             blub = 1
+
+            for i in range(0,2):
+                experiences = self.memory.sample()
+                states0, states1, actions0, actions1, rewards, next_states0, next_states1, dones = experiences
+                next_states = torch.cat((next_states0,next_states1), 1)
+                states = torch.cat((states0,states1),1)
+                actions = torch.cat((actions0,actions1),1)
+                next_action0 = self.agents[0].target_network.actor(next_states0)
+                next_action1 = self.agents[1].target_network.actor((next_states1))
+                next_actions = torch.cat((next_action0,next_action1),1)
+
+                critic_valuues = torch.squeeze(self.agents[i].target_network.critic(next_states, next_actions))
+                y = rewards[:,i] + (1 - dones[:,i]) * gamma * critic_valuues
+                q_value =torch.squeeze(self.agents[i].local_network.critic(states,actions))
+                critic_loss = F.mse_loss(y , q_value)
+                self.agents[i].local_network.critic_network.zero_grad()
+                critic_loss.backward()
+                self.agents[i].local_network.critic_optimizer.step()
+
+                estimated_action0 = self.agents[0].local_network.actor(states0)
+                estimated_action1 = self.agents[1].local_network.actor(states1)
+                estimated_actions = torch.cat((estimated_action0,estimated_action1),1)
+
+                actor_loss = self.agents[i].local_network.critic(states.detach(), estimated_actions)
+                actor_loss = -actor_loss.mean()
+                self.agents[i].local_network.actor_network.zero_grad()
+                actor_loss.backward()
+                self.agents[i].local_network.actor_optimizer.step()
+                self.agents[i].soft_update(TAU) 
+
+
 
     
 
