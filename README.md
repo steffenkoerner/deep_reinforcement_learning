@@ -20,6 +20,7 @@ The projects that are contained in this repro can be found below.  All of the pr
 * [Cheatsheet](https://github.com/steffenkoerner/deep_reinforcement_learning/blob/main/cheatsheet.pdf): Contains a summary of all important reinforcement learning algorithms
 * [Collection of Deep Learning Links](https://docs.google.com/spreadsheets/d/1NZtIxDWiJ_B0UKhIDUk-wTZAT3Fxfh-fGwcQKXg1bQU/edit#gid=0)
 * [Open AI Deep Reinforcement Learning Literature](https://spinningup.openai.com/en/latest/index.html)
+* [Roadmap from OpenAI to get an RL researcher](https://spinningup.openai.com/en/latest/spinningup/spinningup.html)
 
 ### Deep Reinforcement Learning
 - [Deep Reinforcement Learning: Pong from Pixels](http://karpathy.github.io/2016/05/31/rl/)
@@ -43,6 +44,15 @@ The projects that are contained in this repro can be found below.  All of the pr
 - [High-Dimensional Continuous Control Using Generalized Advantage Estimation](https://arxiv.org/abs/1506.02438)
 - [Continuous control with deep reinforcement learning](https://arxiv.org/abs/1509.02971)
 - [Benchmarking Deep Reinforcement Learning for Continuous Control](https://arxiv.org/abs/1604.06778)
+- [Multi-Agent Actor-Critic for Mixed Cooperative-Competitive Environments](https://proceedings.neurips.cc/paper/2017/file/68a9750337a418a86fe06c1991a1d64c-Paper.pdf)
+- [Mastering Chess and Shogi by Self-Play with a General Reinforcement Learning Algorithm](https://arxiv.org/pdf/1712.01815.pdf)
+- [Reproducibility of Benchmarked Deep Reinforcement Learning Tasks for Continuous Control](https://arxiv.org/pdf/1708.04133.pdf)
+
+## YouTube Videos
+- [Deep RL Bootcamp Lecture 6: Nuts and Bolts of Deep RL Experimentation](https://www.youtube.com/watch?v=8EcdaCk9KaQ)
+- [Deep RL Bootcamp Frontiers Lecture I: Recent Advances, Frontiers and Future of DRL](https://www.youtube.com/watch?v=bsuvM1jO-4w)
+- [Deep Learning for Robotics - Prof. Pieter Abbeel - NIPS 2017 Keynote](https://www.youtube.com/watch?v=TyOooJC_bLY)
+
 
 
 ### Evolution Strategies
@@ -167,6 +177,13 @@ The projects that are contained in this repro can be found below.  All of the pr
   - [RL-Adventure](https://github.com/higgsfield/RL-Adventure)
   - [Really cool implementaiton of different RL algorithm](https://github.com/ShangtongZhang/DeepRL)
   - [RL ALgorithm Libraries](https://github.com/vwxyzjn/cleanrl)
+  - [Udactiy repro](https://github.com/udacity/deep-reinforcement-learning)
+  - [Open AI Algorithm Implementation](https://github.com/openai/baselines)
+  - [David Silver](https://github.com/dalmia/David-Silver-Reinforcement-learning)
+  - [Denny Britz Reinforcement Learning](https://github.com/dennybritz/reinforcement-learning)
+  - [DDPG Implementation](https://github.com/floodsung/DDPG)
+
+
   ### Skills a ML should have
 - Building and training neural networks
 - Model evaluation and validation
