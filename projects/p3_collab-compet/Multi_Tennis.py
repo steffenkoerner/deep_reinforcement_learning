@@ -165,7 +165,7 @@ def maddpg(env, agent, n_episodes=2000, max_t=1000, gamma=0.9):
             next_state = env_info.vector_observations
             reward = env_info.rewards
             done = env_info.local_done
-            agent.step()
+            #agent.step()
             state = next_state
             score += reward
             if done[0] or  done[1]:
@@ -204,8 +204,11 @@ class MADDPGAgent():
             DDPGAgent(actor_input_size=actor_input_size, actor_output_size=actor_output_size, critic_input_size=critic_input_size, critic_output_size=critic_output_size, seed=seed, warmup = warmup)
             ]
     
-    def get_acion_per_current_policy_for():
-        pass
+    def get_acion_per_current_policy_for(self, all_states , number_episode, noise):
+        action0 = self.agents[0].get_acion_per_current_policy_for(all_states[0],number_episode,noise)
+        action1 = self.agents[0].get_acion_per_current_policy_for(all_states[0],number_episode,noise)
+        actions = np.vstack((action0,action1))
+        return actions
     
 
 
