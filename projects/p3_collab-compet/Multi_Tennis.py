@@ -11,7 +11,7 @@ from torch.utils.tensorboard import SummaryWriter
 from NewReplayBuffer import ReplayBuffer, GaussianNoise, OUNoise
 
 LEARNING_RATE = 1e-3
-BUFFER_SIZE = int(1e6)
+BUFFER_SIZE = int(200)
 BATCH_SIZE = 128
 TAU = 1e-3              # for soft update of target parameters
 device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
@@ -165,7 +165,7 @@ def maddpg(env, agent, n_episodes=2000, max_t=1000, gamma=0.9):
             next_state = env_info.vector_observations
             reward = env_info.rewards
             done = env_info.local_done
-            #agent.step()
+            agent.step(state, action, reward, next_state, done, gamma)
             state = next_state
             score += reward
             if done[0] or  done[1]:
@@ -203,12 +203,26 @@ class MADDPGAgent():
             DDPGAgent(actor_input_size=actor_input_size, actor_output_size=actor_output_size, critic_input_size=critic_input_size, critic_output_size=critic_output_size, seed=seed, warmup = warmup),
             DDPGAgent(actor_input_size=actor_input_size, actor_output_size=actor_output_size, critic_input_size=critic_input_size, critic_output_size=critic_output_size, seed=seed, warmup = warmup)
             ]
+        self.memory = ReplayBuffer(action_size=action_size, buffer_size=BUFFER_SIZE, batch_size=BATCH_SIZE, seed=seed)
     
     def get_acion_per_current_policy_for(self, all_states , number_episode, noise):
         action0 = self.agents[0].get_acion_per_current_policy_for(all_states[0],number_episode,noise)
         action1 = self.agents[0].get_acion_per_current_policy_for(all_states[0],number_episode,noise)
         actions = np.vstack((action0,action1))
         return actions
+
+    def step(self,state, action, reward, next_state, done, gamma):
+        self.memory.add(state[0], state[1] ,action[0], action[1] ,reward, next_state[0], next_state[1], done)
+        self.learn(gamma)
+    
+    def learn(self, gamma):
+        """Update parameters.
+        """
+        if len(self.memory) > BATCH_SIZE:
+            experiences = self.memory.sample()
+            states0, states1, actions0, action1, rewards, next_states0, next_states1, dones = experiences
+            blub = 1
+
     
 
 
