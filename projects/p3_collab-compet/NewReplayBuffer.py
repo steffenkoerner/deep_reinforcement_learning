@@ -8,7 +8,7 @@ device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
 class ReplayBuffer:
     """Fixed-size buffer to store experience tuples."""
 
-    def __init__(self, action_size, buffer_size, batch_size, seed):
+    def __init__(self,  buffer_size, batch_size, seed):
         """Initialize a ReplayBuffer object.
 
         Params
@@ -18,15 +18,14 @@ class ReplayBuffer:
             batch_size (int): size of each training batch
             seed (int): random seed
         """
-        self.action_size = action_size
         self.memory = deque(maxlen=buffer_size)  
         self.batch_size = batch_size
         self.experience = namedtuple("Experience", field_names=["state0", "state1" ,"action0","action1", "reward", "next_state0", "next_state1", "done"])
         self.seed = random.seed(seed)
     
-    def add(self, state1,state2, action1, action2, reward, next_state1, next_state2, done):
+    def add(self, state0, state1, action0, action1, reward, next_state0, next_state1, done):
         """Add a new experience to memory."""
-        e = self.experience(state1,state2, action1, action2, reward, next_state1, next_state2, done)
+        e = self.experience(state0, state1, action0, action1, reward, next_state0, next_state1, done)
         self.memory.append(e)
     
     def sample(self):
@@ -42,7 +41,7 @@ class ReplayBuffer:
         next_states1 = torch.from_numpy(np.vstack([e.next_state1 for e in experiences if e is not None])).float().to(device)
         dones = torch.from_numpy(np.vstack([e.done for e in experiences if e is not None]).astype(np.uint8)).float().to(device)
   
-        return (states1,states1, actions0, actions1, rewards, next_states0, next_states1, dones)
+        return (states0,states1, actions0, actions1, rewards, next_states0, next_states1, dones)
 
     def __len__(self):
         """Return the current size of internal memory."""
@@ -87,13 +86,14 @@ class LinearIncrements:
 
 class OUNoise:
 
-    def __init__(self, action_dimension, scale=0.1, mu=0, theta=0.15, sigma=0.2):
+    def __init__(self, action_dimension, scale=0.1, mu=0, theta=0.15, sigma=0.2, seed =0):
         self.action_dimension = action_dimension
         self.scale = scale
         self.mu = mu
         self.theta = theta
         self.sigma = sigma
         self.state = np.ones(self.action_dimension) * self.mu
+        self.seed = random.seed(seed)
         self.reset()
 
     def reset(self):

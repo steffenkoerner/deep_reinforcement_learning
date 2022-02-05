@@ -11,20 +11,22 @@ from torch.utils.tensorboard import SummaryWriter
 from ReplayBuffer import ReplayBuffer, GaussianNoise, OUNoise
 
 LEARNING_RATE = 1e-3
-BUFFER_SIZE = int(1e6)
+BUFFER_SIZE = int(1e4)
 BATCH_SIZE = 128
 TAU = 1e-3              # for soft update of target parameters
 device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
-writer = SummaryWriter()
+logger = SummaryWriter()
 
 class CriticNetwork(nn.Module):
-    def __init__(self, state_size, action_size, seed, fc1_units = 400, fc2_units = 300, state_dict=""):
+    def __init__(self, state_size, action_size, seed, fc1_units = 400, fc2_units = 300):
         super(CriticNetwork, self).__init__()
         self.seed = torch.manual_seed(seed)
         self.fc1 = nn.Linear(state_size + action_size, fc1_units)
         self.fc2 = nn.Linear(fc1_units, fc2_units)
         self.fc3 = nn.Linear(fc2_units, 1) # Needs to be 1 as this is the max(Q(s,a)) that is learned
-        self.load_state_dict(state_dict)
+        self.fc1.weight.data.uniform_(0.0,1.0)
+        self.fc2.weight.data.uniform_(0.0,1.0)
+        self.fc3.weight.data.uniform_(0.0,1.0)
         self.to(device)
 
     def forward(self, state):
@@ -34,13 +36,15 @@ class CriticNetwork(nn.Module):
         return x
 
 class ActorNetwork(nn.Module):
-    def __init__(self, state_size, action_size, seed, fc1_units = 400, fc2_units = 300, state_dict=""):
+    def __init__(self, state_size, action_size, seed, fc1_units = 400, fc2_units = 300):
         super(ActorNetwork, self).__init__()
         self.seed = torch.manual_seed(seed)
         self.fc1 = nn.Linear(state_size, fc1_units)
         self.fc2 = nn.Linear(fc1_units, fc2_units)
         self.fc3 = nn.Linear(fc2_units, action_size)
-        self.load_state_dict(state_dict)
+        self.fc1.weight.data.uniform_(0.0,1.0)
+        self.fc2.weight.data.uniform_(0.0,1.0)
+        self.fc3.weight.data.uniform_(0.0,1.0)
         self.to(device)
 
     def forward(self, state):
@@ -50,9 +54,9 @@ class ActorNetwork(nn.Module):
         return x
 
 class DDPGNetwork():
-    def __init__(self, state_size, action_size, seed, actor_state_dict, critic_state_dict):
-        self.actor_network = ActorNetwork(state_size, action_size, seed, state_dict=actor_state_dict).to(device)
-        self.critic_network = CriticNetwork(state_size, action_size, seed,state_dict=critic_state_dict).to(device)
+    def __init__(self, state_size, action_size, seed):
+        self.actor_network = ActorNetwork(state_size, action_size, seed).to(device)
+        self.critic_network = CriticNetwork(state_size, action_size, seed).to(device)
         self.actor_optimizer = optim.Adam(self.actor_network.parameters(), lr=LEARNING_RATE)
         self.critic_optimizer = optim.Adam(self.critic_network.parameters(), lr=LEARNING_RATE)
         
@@ -65,24 +69,26 @@ class DDPGNetwork():
 
 
 class DDPGAgent():
-    def __init__(self, state_size, action_size, seed, warmup = 100,actor_state_dict="", critic_state_dict=""):
+    def __init__(self, state_size, action_size, seed, warmup, id):
         self.state_size = state_size
         self.action_size = action_size
         self.seed = random.seed(seed)
         self.action_lowest_value = -1
         self.action_highest_value = 1
         self.warump = warmup
-        self.gaussian_noise = GaussianNoise(size=action_size, std_start=0.2, std_end=0.01,steps=1000000) 
+        self.id = id
+        self.iter = 0
+        #self.gaussian_noise = GaussianNoise(size=action_size, std_start=0.3, std_end=0.01,steps=1000000) 
         self.ou_noise = OUNoise(action_size, scale=1.0 )
 
         # DDPG-Network
-        self.local_network = DDPGNetwork(state_size, action_size, seed, actor_state_dict=actor_state_dict,critic_state_dict=critic_state_dict)
-        self.target_network = DDPGNetwork(state_size, action_size, seed, actor_state_dict=actor_state_dict,critic_state_dict=critic_state_dict)
+        self.local_network = DDPGNetwork(state_size, action_size, seed)
+        self.target_network = DDPGNetwork(state_size, action_size, seed)
         
         # Replay memory
         self.memory = ReplayBuffer(action_size=action_size, buffer_size=BUFFER_SIZE, batch_size=BATCH_SIZE, seed=seed)   
         
-    def get_acion_per_current_policy_for(self, state , number_episode, noise=0):
+    def get_acion_per_current_policy_for(self, state , number_episode, noise):
         if number_episode < self.warump:
             actions = np.random.randn(self.action_size) 
             actions = np.clip(actions, self.action_lowest_value, self.action_highest_value)   
@@ -93,6 +99,7 @@ class DDPGAgent():
                 actions = self.local_network.actor(state).cpu().data.numpy()
             self.local_network.actor_network.train()
             noise_applied = noise * self.ou_noise.noise().numpy() # TODO: Investigate noise function
+            #noise_applied = self.gaussian_noise()
             actions = np.clip(actions + noise_applied, self.action_lowest_value, self.action_highest_value)
         return actions
 
@@ -101,10 +108,11 @@ class DDPGAgent():
         """Update parameters.
         """
         if len(self.memory) > BATCH_SIZE:
+            self.iter += 1
             experiences = self.memory.sample()
             states, actions, rewards, next_states, dones = experiences
-
-            y = rewards + (1 - dones) * gamma * self.target_network.critic(next_states, self.target_network.actor(next_states))
+            with torch.no_grad():
+                y = rewards + (1 - dones) * gamma * self.target_network.critic(next_states, self.target_network.actor(next_states))
             critic_loss = F.mse_loss(y , self.local_network.critic(states,actions))
             self.local_network.critic_network.zero_grad()
             critic_loss.backward()
@@ -115,6 +123,7 @@ class DDPGAgent():
             self.local_network.actor_network.zero_grad()
             actor_loss.backward()
             self.local_network.actor_optimizer.step()
+            logger.add_scalars('agent%i/losses' % self.id,{'critic_loss': critic_loss.cpu().detach().item(), 'actor_loss': actor_loss.cpu().detach().item()},self.iter)
 
             self.soft_update(self.local_network, self.target_network, TAU) 
 
@@ -161,11 +170,11 @@ def ddpg(env, agent1, agent2, n_episodes=2000, max_t=1000, gamma=0.9):
         env_info = env.reset(train_mode=True)[brain_name] 
         state = env_info.vector_observations
         score = [0,0]
-        noise *= noise_decay
         while True:
+            noise *= noise_decay
             action1 = agent1.get_acion_per_current_policy_for(state[0], i_episode, noise)
             action2 = agent2.get_acion_per_current_policy_for(state[1], i_episode, noise)
-            action = [action1,action2]
+            action = np.vstack((action1,action2))
             env_info = env.step(action)[brain_name]
             next_state = env_info.vector_observations
             reward = env_info.rewards
@@ -174,10 +183,13 @@ def ddpg(env, agent1, agent2, n_episodes=2000, max_t=1000, gamma=0.9):
             agent2.step(state[1], action2, reward[1], next_state[1], done[1], gamma)
             state = next_state
             score += reward
-            if done[0] or  done[1]:
+            if reward[0] !=0 or reward[1] != 0:
+                blub = 1
+
+            if done[0] or done[1]:
                 break 
         max_score = np.max(score)
-        writer.add_scalar("score/train", max_score, i_episode)
+        logger.add_scalar("score/train", max_score, i_episode)
         scores_window.append(max_score)
         scores.append(max_score)
         if i_episode % 200 == 0:
@@ -217,16 +229,10 @@ if __name__ == '__main__':
     states = env_info.vector_observations
     state_size = states.shape[1]
 
-
-    agent1_state_dict_actor = torch.load('intermediate_weight_actor1.pth')
-    agent1_state_dict_critic = torch.load('intermediate_weight_critic1.pth')
-    agent2_state_dict_actor = torch.load('intermediate_weight_actor2.pth')
-    agent2_state_dict_critic = torch.load('intermediate_weight_critic2.pth')
-
-    agent1 = DDPGAgent(state_size= state_size, action_size = action_size, seed = 0 , warmup = 0, actor_state_dict=agent1_state_dict_actor,critic_state_dict=agent1_state_dict_critic)
-    agent2 = DDPGAgent(state_size= state_size, action_size = action_size, seed = 0 , warmup = 0, actor_state_dict=agent2_state_dict_actor,critic_state_dict=agent2_state_dict_critic)
+    agent1 = DDPGAgent(state_size= state_size, action_size = action_size, seed = 0 , warmup = 200, id=1)
+    agent2 = DDPGAgent(state_size= state_size, action_size = action_size, seed = 0 , warmup = 200, id=2)
     scores = ddpg(env,agent1, agent2, n_episodes=5000000000)
 
-    writer.flush()
-    writer.close()
+    logger.flush()
+    logger.close()
     env.close()

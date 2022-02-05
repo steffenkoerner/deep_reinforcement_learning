@@ -10,42 +10,56 @@ import torch.optim as optim
 from torch.utils.tensorboard import SummaryWriter
 from NewReplayBuffer import ReplayBuffer, GaussianNoise, OUNoise
 
-LEARNING_RATE = 1e-3
-BUFFER_SIZE = int(200)
+LEARNING_RATE = 1e-2
+BUFFER_SIZE = int(1e5)
 BATCH_SIZE = 128
-TAU = 1e-3              # for soft update of target parameters
+TAU = 1e-2              # for soft update of target parameters
 device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
-writer = SummaryWriter()
+logger = SummaryWriter()
+
+
+
+agent1_actor_weights  = ""
+agent1_critic_weights = ""
+agent2_actor_weights  = ""
+agent2_critic_weights = ""
 
 class CriticNetwork(nn.Module):
     def __init__(self,critic_input_size, critic_output_size, seed, fc1_units = 400, fc2_units = 300):
         super(CriticNetwork, self).__init__()
         self.seed = torch.manual_seed(seed)
-        self.fc1 = nn.Linear(critic_input_size, fc1_units)
-        self.fc2 = nn.Linear(fc1_units, fc2_units)
-        self.fc3 = nn.Linear(fc2_units, critic_output_size) 
+        self.layers = nn.Sequential(
+            nn.Linear(critic_input_size, fc1_units),
+            # nn.BatchNorm1d(fc1_units),
+            nn.ReLU(),
+            nn.Linear(fc1_units, fc2_units),
+            # nn.BatchNorm1d(fc2_units),
+            nn.ReLU(),
+            nn.Linear(fc2_units, critic_output_size) 
+        )
         self.to(device)
 
     def forward(self, state):
-        x = F.relu(self.fc1(state))
-        x = F.relu(self.fc2(x))
-        x = self.fc3(x)
-        return x
+        return self.layers(state) # TODO: Introduce batch normalization
 
 class ActorNetwork(nn.Module):
     def __init__(self, actor_input_size, actor_output_size, seed, fc1_units = 400, fc2_units = 300):
         super(ActorNetwork, self).__init__()
         self.seed = torch.manual_seed(seed)
-        self.fc1 = nn.Linear(actor_input_size, fc1_units)
-        self.fc2 = nn.Linear(fc1_units, fc2_units)
-        self.fc3 = nn.Linear(fc2_units, actor_output_size)
+        self.layers = nn.Sequential(
+            nn.Linear(actor_input_size, fc1_units),
+            # nn.BatchNorm1d(fc1_units),
+            nn.ReLU(),
+            nn.Linear(fc1_units, fc2_units),
+            # nn.BatchNorm1d(fc2_units),
+            nn.ReLU(),
+            nn.Linear(fc2_units, actor_output_size),
+            nn.Tanh()
+        )
         self.to(device)
 
     def forward(self, state):
-        x = F.relu(self.fc1(state))
-        x = F.relu(self.fc2(x))
-        x = F.tanh(self.fc3(x))
-        return x
+        return self.layers(state) # TODO: Introduce batch normalization
 
 class DDPGNetwork():
     def __init__(self, actor_input_size, actor_output_size, critic_input_size, critic_output_size, seed):
@@ -65,21 +79,29 @@ class DDPGNetwork():
 class DDPGAgent():
     def __init__(self, actor_input_size, actor_output_size, critic_input_size, critic_output_size, seed, warmup):
         self.actor_input_size = actor_input_size
+        self.actor_output_size = actor_output_size
         self.seed = random.seed(seed)
-        self.action_lowest_value = -1
-        self.action_highest_value = 1
+        self.action_lowest_value = -0.9
+        self.action_highest_value = 0.9
         self.warump = warmup
-        self.gaussian_noise = GaussianNoise(size=action_size, std_start=0.2, std_end=0.01,steps=1000000) 
-        self.ou_noise = OUNoise(action_size, scale=1.0 )
+        #self.gaussian_noise = GaussianNoise(size=action_size, std_start=0.8, std_end=0.01,steps=1000000) 
+        self.ou_noise = OUNoise(action_size,seed )
 
         # DDPG-Network
+        # TODO: Make parameter of both networks identical at beginnings
         self.local_network = DDPGNetwork(actor_input_size, actor_output_size, critic_input_size, critic_output_size, seed)
         self.target_network = DDPGNetwork(actor_input_size, actor_output_size, critic_input_size, critic_output_size, seed)
-        
-        
-    def get_acion_per_current_policy_for(self, state , number_episode, noise=0):
-        if number_episode < self.warump:
-            actions = np.random.randn(self.actor_input_size) 
+        self.set_parameters_of_target_and_local_equal()
+    
+    def reset_noise(self):
+        self.ou_noise.reset()
+
+    def set_parameters_of_target_and_local_equal(self):
+        self.soft_update(1.0)
+
+    def get_acion_per_current_policy_for(self, state , number_episode, train_mode):
+        if number_episode < self.warump and train_mode:
+            actions = np.random.randn(self.actor_output_size) 
             actions = np.clip(actions, self.action_lowest_value, self.action_highest_value)   
         else:       
             state = torch.from_numpy(state).float().unsqueeze(0).to(device)
@@ -87,7 +109,8 @@ class DDPGAgent():
             with torch.no_grad():
                 actions = self.local_network.actor(state).cpu().data.numpy()
             self.local_network.actor_network.train()
-            noise_applied = noise * self.ou_noise.noise().numpy() # TODO: Investigate noise function
+            noise_applied = self.ou_noise.noise().numpy() # TODO: Investigate noise function
+            #noise_applied =  self.gaussian_noise()
             actions = np.clip(actions + noise_applied, self.action_lowest_value, self.action_highest_value)
         return actions
 
@@ -130,10 +153,11 @@ def maddpg(env, agent, n_episodes=2000, max_t=1000, gamma=0.9):
     for i_episode in range(1, n_episodes+1):
         env_info = env.reset(train_mode=True)[brain_name] 
         state = env_info.vector_observations
+        agent.reset_noise()
         score = [0,0]
-        noise *= noise_decay
         while True:
-            action = agent.get_acion_per_current_policy_for(state, i_episode, noise)
+            noise *= noise_decay
+            action = agent.get_acion_per_current_policy_for(state, i_episode, True)
             env_info = env.step(action)[brain_name]
             next_state = env_info.vector_observations
             reward = env_info.rewards
@@ -141,32 +165,29 @@ def maddpg(env, agent, n_episodes=2000, max_t=1000, gamma=0.9):
             agent.step(state, action, reward, next_state, done, gamma)
             state = next_state
             score += reward
-            if done[0] or  done[1]:
+            if np.any(done): 
                 break 
+        logger.add_scalars('agent/scores',{'agent1': score[0], 'agent2': score[1], },i_episode)
         max_score = np.max(score)
-        writer.add_scalar("score/train", max_score, i_episode)
         scores_window.append(max_score)
         scores.append(max_score)
-        if i_episode % 200 == 0:
-            #plot_scores(scores,i_episode)
-            pass
 
         print('\rEpisode {}\tAverage Score: {:.2f}'.format(i_episode, np.mean(scores_window)), end="")
         if i_episode % 100 == 0:
             print('\rEpisode {}\tAverage Score: {:.2f}'.format(i_episode, np.mean(scores_window)))
         if np.mean(scores_window) > max_score_value + 0.1:
             print('\nEnvironment saved in {:d} episodes!\tAverage Score: {:.2f}'.format(i_episode-100, np.mean(scores_window)))
-            torch.save(agent.agents[0].local_network.actor_network.state_dict(), 'intermediate_weight_actor1.pth')
-            torch.save(agent.agents[0].local_network.critic_network.state_dict(), 'intermediate_weight_critic1.pth')
-            torch.save(agent.agents[1].local_network.actor_network.state_dict(), 'intermediate_weight_actor2.pth')
-            torch.save(agent.agents[1].local_network.critic_network.state_dict(), 'intermediate_weight_critic2.pth')
+            torch.save(agent.agents[0].local_network.actor_network.state_dict(), 'multi_intermediate_weight_actor1.pth')
+            torch.save(agent.agents[0].local_network.critic_network.state_dict(),'multi_intermediate_weight_critic1.pth')
+            torch.save(agent.agents[1].local_network.actor_network.state_dict(), 'multi_intermediate_weight_actor2.pth')
+            torch.save(agent.agents[1].local_network.critic_network.state_dict(),'multi_intermediate_weight_critic2.pth')
             max_score_value = np.mean(scores_window)
         if np.mean(scores_window) >= 30:
             print('\nEnvironment solved in {:d} episodes!\tAverage Score: {:.2f}'.format(i_episode-100, np.mean(scores_window)))
-            torch.save(agent.agents[0].local_network.actor_network.state_dict(), 'final_weight_actor1.pth')
-            torch.save(agent.agents[0].local_network.critic_network.state_dict(), 'final_weight_critic1.pth')
-            torch.save(agent.agents[1].local_network.actor_network.state_dict(), 'final_weight_actor2.pth')
-            torch.save(agent.agents[1].local_network.critic_network.state_dict(), 'final_weight_critic2.pth')
+            torch.save(agent.agents[0].local_network.actor_network.state_dict(),  'multi_final_weight_actor1.pth')
+            torch.save(agent.agents[0].local_network.critic_network.state_dict(), 'multi_final_weight_critic1.pth')
+            torch.save(agent.agents[1].local_network.actor_network.state_dict(),  'multi_final_weight_actor2.pth')
+            torch.save(agent.agents[1].local_network.critic_network.state_dict(), 'multi_final_weight_critic2.pth')
             break
     return scores
 
@@ -176,11 +197,27 @@ class MADDPGAgent():
             DDPGAgent(actor_input_size=actor_input_size, actor_output_size=actor_output_size, critic_input_size=critic_input_size, critic_output_size=critic_output_size, seed=seed, warmup = warmup),
             DDPGAgent(actor_input_size=actor_input_size, actor_output_size=actor_output_size, critic_input_size=critic_input_size, critic_output_size=critic_output_size, seed=seed, warmup = warmup)
             ]
-        self.memory = ReplayBuffer(action_size=action_size, buffer_size=BUFFER_SIZE, batch_size=BATCH_SIZE, seed=seed)
-    
-    def get_acion_per_current_policy_for(self, all_states , number_episode, noise):
-        action0 = self.agents[0].get_acion_per_current_policy_for(all_states[0],number_episode,noise)
-        action1 = self.agents[1].get_acion_per_current_policy_for(all_states[1],number_episode,noise)
+        self.memory = ReplayBuffer(buffer_size=BUFFER_SIZE, batch_size=BATCH_SIZE, seed=seed)
+        self.iter = 0
+        self.load_weights()
+
+    def load_weights(self):
+        if agent1_actor_weights != "":
+            self.agents[0].local_network.actor_network.load_state_dict(torch.load(agent1_actor_weights))
+            self.agents[0].local_network.critic_network.load_state_dict(torch.load(agent1_critic_weights))
+            self.agents[0].set_parameters_of_target_and_local_equal()
+
+            self.agents[1].local_network.actor_network.load_state_dict(torch.load(agent2_actor_weights))
+            self.agents[1].local_network.critic_network.load_state_dict(torch.load(agent2_critic_weights))
+            self.agents[1].set_parameters_of_target_and_local_equal()
+
+    def reset_noise(self):
+        self.agents[0].reset_noise()
+        self.agents[1].reset_noise()
+
+    def get_acion_per_current_policy_for(self, all_states , number_episode, train_mode):
+        action0 = self.agents[0].get_acion_per_current_policy_for(all_states[0],number_episode, True)
+        action1 = self.agents[1].get_acion_per_current_policy_for(all_states[1],number_episode, True)
         actions = np.vstack((action0,action1))
         return actions
 
@@ -192,7 +229,7 @@ class MADDPGAgent():
         """Update parameters.
         """
         if len(self.memory) > BATCH_SIZE:
-            blub = 1
+            self.iter += 1
 
             for i in range(0,2):
                 experiences = self.memory.sample()
@@ -204,11 +241,13 @@ class MADDPGAgent():
                 next_action1 = self.agents[1].target_network.actor((next_states1))
                 next_actions = torch.cat((next_action0,next_action1),1)
 
-                critic_valuues = torch.squeeze(self.agents[i].target_network.critic(next_states, next_actions))
-                y = rewards[:,i] + (1 - dones[:,i]) * gamma * critic_valuues
+                self.agents[i].local_network.critic_optimizer.zero_grad()
+                with torch.no_grad():
+                    critic_values = torch.squeeze(self.agents[i].target_network.critic(next_states, next_actions))
+                y = rewards[:,i] + (1 - dones[:,i]) * gamma * critic_values
                 q_value =torch.squeeze(self.agents[i].local_network.critic(states,actions))
-                critic_loss = F.mse_loss(y , q_value)
-                self.agents[i].local_network.critic_network.zero_grad()
+                huber_loss = torch.nn.SmoothL1Loss()
+                critic_loss = huber_loss(y.detach() , q_value)
                 critic_loss.backward()
                 self.agents[i].local_network.critic_optimizer.step()
 
@@ -216,15 +255,37 @@ class MADDPGAgent():
                 estimated_action1 = self.agents[1].local_network.actor(states1)
                 estimated_actions = torch.cat((estimated_action0,estimated_action1),1)
 
-                actor_loss = self.agents[i].local_network.critic(states.detach(), estimated_actions)
-                actor_loss = -actor_loss.mean()
-                self.agents[i].local_network.actor_network.zero_grad()
+                self.agents[i].local_network.actor_optimizer.zero_grad()
+                actor_loss = -self.agents[i].local_network.critic(states, estimated_actions).mean()
                 actor_loss.backward()
                 self.agents[i].local_network.actor_optimizer.step()
-                self.agents[i].soft_update(TAU) 
+                self.agents[i].soft_update(TAU)
+                al = -actor_loss.cpu().detach().item()
+                cl = critic_loss.cpu().detach().item()
+                q_val = q_value.cpu().detach().mean().item()
+                reward = rewards[:,i].cpu().detach().mean()
+                logger.add_scalars('agent%i/losses' % i,{'critic_loss': cl, 'actor_loss': al, 'q_value' : q_val, 'reward' : reward},self.iter)
 
 
-
+def test_performance(agent, env, brain_name):
+    for i in range(1, 1000):                                      # play game for 5 episodes
+        env_info = env.reset(train_mode=False)[brain_name]     # reset the environment    
+        #states = env_info.vector_observations                  # get the current state (for each agent)
+        scores = [0,0]                       # initialize the score (for each agent)
+        while True:
+            #actions = agent.get_acion_per_current_policy_for(states , 0, False) # select an action (for each agent)
+            actions_random = np.random.randn(2, 2) 
+            actions = actions_random
+            #actions = np.clip(actions, -1, 1)                  # all actions between -1 and 1
+            env_info = env.step(actions)[brain_name]           # send all actions to tne environment
+            next_states = env_info.vector_observations         # get next state (for each agent)
+            rewards = env_info.rewards                         # get reward (for each agent)
+            dones = env_info.local_done                        # see if episode finished
+            scores += env_info.rewards                         # update the score (for each agent)
+            states = next_states                               # roll over states to next time step
+            if np.any(dones):                                  # exit loop if episode finished
+                break
+        print('Score (max over agents) from episode {}: {}'.format(i, np.max(scores)))
     
 
 
@@ -235,15 +296,17 @@ if __name__ == '__main__':
 
     # reset the environment
     env_info = env.reset(train_mode=True)[brain_name]
-
     action_size = brain.vector_action_space_size
     states = env_info.vector_observations
     state_size = states.shape[1]
 
-    agent = MADDPGAgent(actor_input_size=state_size, actor_output_size=action_size, critic_input_size=2*state_size+2*action_size, critic_output_size=1, seed=0, warmup=0)
-    # agent2 = DDPGAgent(state_size= state_size, action_size = action_size, seed = 0 , warmup = 0, actor_state_dict=agent2_state_dict_actor,critic_state_dict=agent2_state_dict_critic)
-    scores = maddpg(env,agent, n_episodes=5000000000)
 
-    writer.flush()
-    writer.close()
+    
+
+    critic_input_size =2*state_size+2*action_size
+    agent = MADDPGAgent(actor_input_size=state_size, actor_output_size=action_size, critic_input_size=critic_input_size, critic_output_size=1, seed=0, warmup=0)
+    scores = maddpg(env=env,agent=agent, n_episodes=5000000000, gamma=0.99)
+    #test_performance(agent,env,brain_name)
+    logger.flush()
+    logger.close()
     env.close()
