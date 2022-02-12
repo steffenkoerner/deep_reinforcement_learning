@@ -15,6 +15,8 @@ The projects that are contained in this repro can be found below.  All of the pr
 * [REINFORCE Algorithm](https://github.com/steffenkoerner/deep_reinforcement_learning/tree/main/projects/reinforce_algorithm): This project contains the implementation of the REINFORCE algorithm to solve the OpenAI CartPole environment
 * [DDPG Algorithm](https://github.com/steffenkoerner/deep_reinforcement_learning/tree/main/projects/p2_continous_control): This project contains the implementation of the DDPG to solve the unity Reacher environment
 
+### AI Resideny Programs
+https://github.com/dangkhoasdc/awesome-ai-residency
 ### Additinal Resources
 
 * [Cheatsheet](https://github.com/steffenkoerner/deep_reinforcement_learning/blob/main/cheatsheet.pdf): Contains a summary of all important reinforcement learning algorithms
