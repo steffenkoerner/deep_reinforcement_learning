@@ -8,7 +8,7 @@
             "name": "Banana Main",
             "type": "python",
             "request": "launch",
-            "program": "/home/steffen/workspace/deep_reinforcement_learning/library/examples/main.py",
+            "program": "/home/steffen/workspace/deep_reinforcement_learning/library/examples/banana_env/main.py",
             "console": "integratedTerminal",
             "args": ["--mode", "train"]
         }

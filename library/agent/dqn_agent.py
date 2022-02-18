@@ -1,11 +1,9 @@
 
-BUFFER_SIZE = int(1e5)  # replay buffer size
-BATCH_SIZE = 64         # minibatch size
-GAMMA = 0.99            # discount factor
-TAU = 1e-3              # for soft update of target parameters
-LR = 5e-4               # learning rate 
-UPDATE_EVERY = 4        # how often to update the network
-
+# BUFFER_SIZE = int(1e5)  # replay buffer size
+# BATCH_SIZE = 64         # minibatch size
+# GAMMA = 0.99            # discount factor
+# TAU = 1e-3              # for soft update of target parameters
+# LR = 5e-4               # learning rate
 
 from networks.q_network import QNetwork
 from memory.replay_buffer import ReplayBuffer
@@ -19,17 +17,18 @@ import numpy as np
 device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
 class DQNAgent():
 
-    def __init__(self, state_size, action_size, seed):
+    def __init__(self, state_size, action_size,config, seed):
         self.state_size = state_size
         self.action_size = action_size
         self.seed = random.seed(seed)
+        self.config = config
 
         # Q-Network
         self.qnetwork_local = QNetwork(state_size, action_size, seed).to(device)
         self.qnetwork_target = QNetwork(state_size, action_size, seed).to(device)
-        self.optimizer = optim.Adam(self.qnetwork_local.parameters(), lr=LR)
+        self.optimizer = optim.Adam(self.qnetwork_local.parameters(), lr=self.config.learning_rate)
 
-        self.memory = ReplayBuffer(BUFFER_SIZE, BATCH_SIZE, seed)
+        self.memory = ReplayBuffer(config.replay_buffer_size, self.config.batch_size, seed)
     
     def step(self, state, action, reward, next_state, done):
         self.memory.add(state, action, reward, next_state, done)
@@ -48,14 +47,14 @@ class DQNAgent():
             return random.choice(np.arange(self.action_size))
 
     def learn(self):
-        if len(self.memory) < BATCH_SIZE:
+        if len(self.memory) < self.config.batch_size:
             return
 
         experiences = self.memory.sample()
         states, actions, rewards, next_states, dones = experiences
 
         Q_targets_next = self.qnetwork_target(next_states).detach().max(1)[0].unsqueeze(1)
-        Q_targets = rewards + (GAMMA * Q_targets_next * (1 - dones))
+        Q_targets = rewards + (self.config.gamma * Q_targets_next * (1 - dones))
         Q_expected = self.qnetwork_local(states)
         actions = actions
         Q_expected = Q_expected.gather(1, actions)
@@ -65,7 +64,7 @@ class DQNAgent():
         loss.backward()
         self.optimizer.step()
 
-        self.soft_update(self.qnetwork_local, self.qnetwork_target, TAU)                     
+        self.soft_update(self.qnetwork_local, self.qnetwork_target, self.config.tau)                     
 
     def soft_update(self, local_model, target_model, tau):
         """Updates the parameters of the target network  """
