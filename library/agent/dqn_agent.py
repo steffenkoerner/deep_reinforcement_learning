@@ -57,6 +57,8 @@ class DQNAgent():
         Q_targets_next = self.qnetwork_target(next_states).detach().max(1)[0].unsqueeze(1)
         Q_targets = rewards + (GAMMA * Q_targets_next * (1 - dones))
         Q_expected = self.qnetwork_local(states)
+        actions = actions
+        Q_expected = Q_expected.gather(1, actions)
 
         loss = F.mse_loss(Q_expected, Q_targets)
         self.optimizer.zero_grad()
