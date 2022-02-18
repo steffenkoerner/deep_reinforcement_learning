@@ -36,7 +36,7 @@ class DQNAgent():
         self.learn()
 
     def act(self, state, eps=0.):
-        state = torch.from_numpy(state).float().unsqueeze(0).to(device)
+        state = torch.from_numpy(state).float().to(device)
         self.qnetwork_local.eval()
         with torch.no_grad():
             action_values = self.qnetwork_local(state)
@@ -56,7 +56,7 @@ class DQNAgent():
 
         Q_targets_next = self.qnetwork_target(next_states).detach().max(1)[0].unsqueeze(1)
         Q_targets = rewards + (GAMMA * Q_targets_next * (1 - dones))
-        Q_expected = self.qnetwork_local(states).gather(1, actions)
+        Q_expected = self.qnetwork_local(states)
 
         loss = F.mse_loss(Q_expected, Q_targets)
         self.optimizer.zero_grad()
