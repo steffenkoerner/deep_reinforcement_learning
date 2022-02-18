@@ -7,7 +7,6 @@ device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
 
 class ReplayBuffer:
     """Fixed-size buffer to store experience tuples."""
-
     def __init__(self, maximum_buffer_size, batch_size, seed):
 
         self.memory = deque(maxlen=maximum_buffer_size)  
@@ -32,5 +31,4 @@ class ReplayBuffer:
         return (states, actions, rewards, next_states, dones)
 
     def __len__(self):
-        """Return the current size of internal memory."""
         return len(self.memory)

@@ -2,18 +2,19 @@ import torch
 import numpy as np
 import matplotlib.pyplot as plt
 
-def log_and_save(agent,i_episode, mean_value, max_score_value):
+def log_and_save(agent,i_episode, mean_value, config):
+     
     print('\rEpisode {}\tAverage Score: {:.2f}'.format(i_episode, mean_value), end="")
     if i_episode % 100 == 0:
         print('\rEpisode {}\tAverage Score: {:.2f}'.format(i_episode, mean_value))
-    if mean_value>=0 and mean_value > max_score_value + 3:
+    if mean_value > log_and_save.max_score_value + config.save_each_return_step:
         print('\nEnvironment saved in {:d} episodes!\tAverage Score: {:.2f}'.format(i_episode-100, mean_value))
         torch.save(agent.qnetwork_local.state_dict(), 'checkpoint_intermediate.pth')
-        max_score_value = mean_value
-    if mean_value >= 13:
+        log_and_save.max_score_value = mean_value
+    if mean_value >= config.stop_return:
         print('\nEnvironment solved in {:d} episodes!\tAverage Score: {:.2f}'.format(i_episode-100, mean_value))
         torch.save(agent.qnetwork_local.state_dict(), 'checkpoint.pth')
-
+log_and_save.max_score_value = 0
 
 def plot_scores(scores):
     fig = plt.figure()
