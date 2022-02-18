@@ -9,7 +9,8 @@
             "type": "python",
             "request": "launch",
             "program": "/home/steffen/workspace/deep_reinforcement_learning/library/examples/main.py",
-            "console": "integratedTerminal"
+            "console": "integratedTerminal",
+            "args": ["--mode", "train"]
         }
     ]
 }
