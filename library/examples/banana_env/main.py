@@ -18,4 +18,4 @@ if __name__ == "__main__":
     if(args.mode == "train"):
         scores = dqn(env,agent,config)
     else:
-        evaluate(env,agent)
+        evaluate(env,agent) #TODO Define that path to the weights to load

@@ -14,3 +14,5 @@ class Config:
 
     self.stop_return = 13
     self.save_each_return_step = 3
+
+    #TODO Move config for Neural Network to here
