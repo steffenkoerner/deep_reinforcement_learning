@@ -1,6 +1,6 @@
 from collections import deque
+from utils.logging import log_and_save
 import numpy as np
-import matplotlib.pyplot as plt
 import torch
 
 def dqn(env,agent, n_episodes=2000, eps_start=1.0, eps_end=0.01, eps_decay=0.995):
@@ -38,25 +38,9 @@ def dqn(env,agent, n_episodes=2000, eps_start=1.0, eps_end=0.01, eps_decay=0.995
         scores.append(score)
         eps = max(eps_end, eps_decay*eps)
 
-
-
-        print('\rEpisode {}\tAverage Score: {:.2f}'.format(i_episode, np.mean(scores_window)), end="")
-        if i_episode % 100 == 0:
-            print('\rEpisode {}\tAverage Score: {:.2f}'.format(i_episode, np.mean(scores_window)))
-        if np.mean(scores_window)>=0 and np.mean(scores_window) > max_score_value + 3:
-            print('\nEnvironment saved in {:d} episodes!\tAverage Score: {:.2f}'.format(i_episode-100, np.mean(scores_window)))
-            torch.save(agent.qnetwork_local.state_dict(), 'checkpoint_intermediate.pth')
-            max_score_value = np.mean(scores_window)
-        if np.mean(scores_window) >= 13:
-            print('\nEnvironment solved in {:d} episodes!\tAverage Score: {:.2f}'.format(i_episode-100, np.mean(scores_window)))
-            torch.save(agent.qnetwork_local.state_dict(), 'checkpoint.pth')
+        mean_value = np.mean(scores_window)
+        log_and_save(agent,i_episode,mean_value,max_score_value)
+        if mean_value >= 13:
             break
     return scores
 
-# plot the scores
-# fig = plt.figure()
-# ax = fig.add_subplot(111)
-# plt.plot(np.arange(len(scores)), scores)
-# plt.ylabel('Score')
-# plt.xlabel('Episode #')
-# plt.show()
