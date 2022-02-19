@@ -11,16 +11,16 @@ import numpy as np
 device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
 class DQNAgent():
 
-    def __init__(self, config, seed):
-        self.seed = random.seed(seed)
+    def __init__(self, config):
+        self.seed = random.seed(config.seed)
         self.config = config
 
         # Q-Network
-        self.qnetwork_local = QNetwork(config, seed).to(device)
-        self.qnetwork_target = QNetwork(config, seed).to(device)
+        self.qnetwork_local = QNetwork(config, self.seed).to(device)
+        self.qnetwork_target = QNetwork(config, self.seed).to(device)
         self.optimizer = optim.Adam(self.qnetwork_local.parameters(), lr=self.config.learning_rate)
 
-        self.memory = ReplayBuffer(config.replay_buffer_size, self.config.batch_size, seed)
+        self.memory = ReplayBuffer(config.replay_buffer_size, self.config.batch_size, self.seed)
     
     def step(self, state, action, reward, next_state, done):
         self.memory.add(state, action, reward, next_state, done)

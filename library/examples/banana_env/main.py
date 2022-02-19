@@ -14,7 +14,7 @@ if __name__ == "__main__":
     env = UnityEnvironment(file_name="/home/steffen/workspace/deep_reinforcement_learning/library/examples/banana_env/Banana_Linux/Banana.x86_64")
 
     config = Config()
-    agent = DQNAgent(config=config,seed=0)
+    agent = DQNAgent(config=config)
     if(args.mode == "train"):
         scores = dqn(env,agent,config)
     else:

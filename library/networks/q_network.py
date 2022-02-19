@@ -6,7 +6,7 @@ import torch.nn.functional as F
 class QNetwork(nn.Module):
     def __init__(self, config, seed):
         super(QNetwork, self).__init__()
-        self.seed = torch.manual_seed(seed)
+        torch.manual_seed(config.seed)
         self.model = config.model
 
     def forward(self, state):
