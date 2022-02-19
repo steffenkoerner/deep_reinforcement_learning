@@ -2,11 +2,11 @@
 
 [image1]: https://user-images.githubusercontent.com/10624937/42135619-d90f2f28-7d12-11e8-8823-82b970a54d7e.gif "Trained Agent"
 
-# Project 1: Navigation with a Deep Q-Network
+# Navigation with a Deep Q-Network
 
 ### Introduction
 
-This project is part of my Deep Reinforcement Learning Nanodegree from udacity. The goal is to train an agent to collect only yellow bananas in a large, square world. See image below.
+The goal is to train an agent to collect only yellow bananas in a large, square world. See image below.
 A reward of +1 is provided for collecting a yellow banana, and a reward of -1 is provided for collecting a blue banana.  Thus, the agent should collect as many yellow bananas as possible while avoiding blue bananas.
 
 ![Trained Agent][image1]
@@ -24,7 +24,7 @@ The task is episodic, and in order to solve the environment, your agent must get
 
 ### Getting Started
 
-1. Follow the Setup from the project [README](https://github.com/steffenkoerner/deep_reinforcement_learning/blob/main/projects/README.md)
+1. Follow the Setup from the project [README](https://github.com/steffenkoerner/deep_reinforcement_learning/library/examples/README.md)
 
 1. Download the environment from one of the links below.  You need only select the environment that matches your operating system:
     - Linux: [click here](https://s3-us-west-1.amazonaws.com/udacity-drlnd/P1/Banana/Banana_Linux.zip)
@@ -36,15 +36,9 @@ The task is episodic, and in order to solve the environment, your agent must get
 
     (_For AWS_) If you'd like to train the agent on AWS (and have not [enabled a virtual screen](https://github.com/Unity-Technologies/ml-agents/blob/master/docs/Training-on-Amazon-Web-Service.md)), then please use [this link](https://s3-us-west-1.amazonaws.com/udacity-drlnd/P1/Banana/Banana_Linux_NoVis.zip) to obtain the environment.
 
-2. Place the file in this `p1_navigation/` folder, and unzip (or decompress) the file. 
-3. Setup the python environment as described in [Project README](https://github.com/steffenkoerner/deep_reinforcement_learning/blob/main/projects/README.md) 
-
+2. Place the file in this folder
 
 
 ### Instructions
 
-Follow the instructions in `Navigation.ipynb` to get started with training your own agent!  
-
-### Details of Implementation
-More details on the technical implementaiton can be found in the [Report](https://github.com/steffenkoerner/deep_reinforcement_learning/blob/main/projects/p1_navigation/Report.md)
 
