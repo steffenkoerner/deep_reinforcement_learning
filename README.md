@@ -49,13 +49,15 @@ https://github.com/dangkhoasdc/awesome-ai-residency
 - [Multi-Agent Actor-Critic for Mixed Cooperative-Competitive Environments](https://proceedings.neurips.cc/paper/2017/file/68a9750337a418a86fe06c1991a1d64c-Paper.pdf)
 - [Mastering Chess and Shogi by Self-Play with a General Reinforcement Learning Algorithm](https://arxiv.org/pdf/1712.01815.pdf)
 - [Reproducibility of Benchmarked Deep Reinforcement Learning Tasks for Continuous Control](https://arxiv.org/pdf/1708.04133.pdf)
+- [Stabilising Experience Replay for Deep Multi-Agent Reinforcement Learning](https://arxiv.org/pdf/1702.08887.pdf)
 
 ## YouTube Videos
 - [Deep RL Bootcamp Lecture 6: Nuts and Bolts of Deep RL Experimentation](https://www.youtube.com/watch?v=8EcdaCk9KaQ)
 - [Deep RL Bootcamp Frontiers Lecture I: Recent Advances, Frontiers and Future of DRL](https://www.youtube.com/watch?v=bsuvM1jO-4w)
 - [Deep Learning for Robotics - Prof. Pieter Abbeel - NIPS 2017 Keynote](https://www.youtube.com/watch?v=TyOooJC_bLY)
 
-
+## Deep Learning Algorithm Implementations
+- [Dopmamine from Google](https://github.com/google/dopamine)
 
 ### Evolution Strategies
 - [Evolution Strategies as a Scalable Alernative to Reinforcement Learning](https://openai.com/blog/evolution-strategies/)
