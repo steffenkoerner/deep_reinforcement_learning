@@ -16,3 +16,5 @@ class Config:
     self.save_each_return_step = 3
 
     #TODO Move config for Neural Network to here
+    self.input_layer_size = 37
+    self.output_layer_size = 4

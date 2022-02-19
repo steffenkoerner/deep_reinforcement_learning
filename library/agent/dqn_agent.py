@@ -11,15 +11,13 @@ import numpy as np
 device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
 class DQNAgent():
 
-    def __init__(self, state_size, action_size,config, seed):
-        self.state_size = state_size
-        self.action_size = action_size
+    def __init__(self, config, seed):
         self.seed = random.seed(seed)
         self.config = config
 
         # Q-Network
-        self.qnetwork_local = QNetwork(state_size, action_size, seed).to(device)
-        self.qnetwork_target = QNetwork(state_size, action_size, seed).to(device)
+        self.qnetwork_local = QNetwork(config, seed).to(device)
+        self.qnetwork_target = QNetwork(config, seed).to(device)
         self.optimizer = optim.Adam(self.qnetwork_local.parameters(), lr=self.config.learning_rate)
 
         self.memory = ReplayBuffer(config.replay_buffer_size, self.config.batch_size, seed)
@@ -38,7 +36,7 @@ class DQNAgent():
         if random.random() > eps:
             return np.argmax(action_values.cpu().data.numpy())
         else:
-            return random.choice(np.arange(self.action_size))
+            return random.choice(np.arange(self.config.output_layer_size))
 
     def learn(self):
         if len(self.memory) < self.config.batch_size:
