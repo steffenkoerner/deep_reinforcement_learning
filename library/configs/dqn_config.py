@@ -18,10 +18,11 @@ class Config:
 
     self.stop_return = 13
     self.save_each_return_step = 3
+    self.episode_length = 700
 
     #TODO Move config for Neural Network to here
-    self.input_layer_size = 37
-    self.output_layer_size = 4
+    self.input_layer_size = 105
+    self.output_layer_size = 7
     self.model = nn.Sequential(
           nn.Linear(self.input_layer_size,64),
           nn.ReLU(),
