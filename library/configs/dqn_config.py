@@ -20,7 +20,7 @@ class Config:
     
     self.stop_return = 13
     self.save_each_return_step = 0.5
-    self.episode_length = 2000
+    self.episode_length = 5000
 
     #TODO Move config for Neural Network to here
     self.input_layer_size = 105
