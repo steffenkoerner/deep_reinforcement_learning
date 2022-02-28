@@ -1,4 +1,5 @@
-tensorflow==1.7.1
+tensorflow==2.6.2
+tensorboard==2.6.0
 Pillow>=4.2.1
 matplotlib
 numpy>=1.11.0
@@ -8,7 +9,7 @@ docopt
 pyyaml
 protobuf==3.5.2
 grpcio==1.11.0
-torch==0.4.0
+torch==1.0.0
+mlagents==0.28.0
 pandas
 scipy
-ipykernel
