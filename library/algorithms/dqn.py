@@ -26,6 +26,7 @@ def dqn(env,agent, config):
                 break 
         scores_window.append(score)
         scores.append(score)
+        config.logger.add_scalar("score/train", score, i_episode)
         eps = max(config.eps_end, config.eps_decay*eps)
         mean_value = np.mean(scores_window)
         log_and_save(agent,i_episode,mean_value, config)
