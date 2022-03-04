@@ -15,12 +15,12 @@ if __name__ == "__main__":
     args = parser.parse_args()
 
     config = Config()
-    env = UnityEnvironment(file_name="/home/steffen/workspace/Environments/Basic/Basic.x86_64")
+    env = UnityEnvironment(file_name=config.env_path)
     env.reset()
     behavior_name = list(env.behavior_specs)[0]
 
-    agent = DQNAgent(config=config)
+    agent = config.agent #DQNAgent(config=config)
     if(args.mode == "train"):
-        scores = dqn_unity(env,agent,config)
+        scores = config.algorithm(env,agent,config)
     else:
         evaluate(env,agent) #TODO Define that path to the weights to load

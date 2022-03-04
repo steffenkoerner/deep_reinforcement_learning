@@ -1,9 +1,12 @@
+from algorithms.dqn_unity import dqn_unity
 import torch.nn as nn
+from agent.dqn_agent import DQNAgent
 from collections import OrderedDict
 from torch.utils.tensorboard import SummaryWriter
 class Config:
   def __init__(self):
 
+    self.env_path = "/home/steffen/workspace/Environments/Basic/Basic.x86_64"
     self.seed = 0
     self.logger = SummaryWriter()
 
@@ -34,3 +37,5 @@ class Config:
         )
 
     self.path_to_stored_weights = ""
+    self.agent = DQNAgent(self)
+    self.algorithm = dqn_unity
