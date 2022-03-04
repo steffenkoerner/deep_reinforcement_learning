@@ -9,14 +9,16 @@ def dqn_unity(env,agent, config):
     scores = []
     scores_window = deque(maxlen=100)
     eps = config.eps_start
+    behavior_name = list(env.behavior_specs)[0]
+    spec = env.behavior_specs[behavior_name]
     agent_id = 0
     for i_episode in range(1, config.number_episodes+1):
         env.reset()
-        behavior_name = list(env.behavior_specs)[0]
-        spec = env.behavior_specs[behavior_name]
         decision_steps, terminal_steps = env.get_steps(behavior_name)
+        agent_id = decision_steps.agent_id[0]
         agent_index = decision_steps.agent_id_to_index[agent_id]
         state = decision_steps.obs[0][agent_index]
+
         score = 0
         done = False
         for episode_length in range(1, config.episode_length):

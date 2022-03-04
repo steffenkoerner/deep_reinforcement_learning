@@ -16,15 +16,15 @@ class Config:
     self.number_episodes = 2000
     self.eps_start = 0.7
     self.eps_end = 0.01
-    self.eps_decay = 0.995
+    self.eps_decay = 0.9
     
     self.stop_return = 13
-    self.save_each_return_step = 0.5
+    self.save_each_return_step = 0.1
     self.episode_length = 5000
 
     #TODO Move config for Neural Network to here
-    self.input_layer_size = 105
-    self.output_layer_size = 7
+    self.input_layer_size = 20
+    self.output_layer_size = 3
     self.model = nn.Sequential(
           nn.Linear(self.input_layer_size,300),
           nn.ReLU(),
@@ -32,3 +32,5 @@ class Config:
           nn.ReLU(),
           nn.Linear(200, self.output_layer_size),
         )
+
+    self.path_to_stored_weights = ""
