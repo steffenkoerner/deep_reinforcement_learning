@@ -26,28 +26,9 @@ def plot_scores(scores):
     plt.show()
 
 
-# def evaluate(env, agent):
-#     brain_name = env.brain_names[0]
-#     agent.load_weights()
-#     env_info = env.reset(train_mode=False)[brain_name]
-#     state = env_info.vector_observations[0]
-#     score = 0
-#     while True:
-#         action = agent.act(state, 0.)
-#         env_info = env.step(action)[brain_name]
-#         next_state = env_info.vector_observations[0]
-#         reward = env_info.rewards[0]
-#         done = env_info.local_done[0]
-#         score += reward
-#         state = next_state
-#         if done:
-#             break
-
-#     print("Score: {}".format(score))
-
-
-def evaluate(env, agent):
-    agent.load_weights()
+def evaluate(env, config):
+    agent = config.agent 
+    agent.load_weights(config.path_to_stored_weights)
 
     behavior_name = list(env.behavior_specs)[0]
     spec = env.behavior_specs[behavior_name]

@@ -5,7 +5,8 @@ import numpy as np
 import torch
 
 
-def dqn_unity(env,agent, config):
+def dqn_unity(env,config):
+    agent = config.agent 
     scores = []
     scores_window = deque(maxlen=100)
     eps = config.eps_start

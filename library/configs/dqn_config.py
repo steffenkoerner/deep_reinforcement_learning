@@ -36,6 +36,6 @@ class Config:
           nn.Linear(200, self.output_layer_size),
         )
 
-    self.path_to_stored_weights = ""
     self.agent = DQNAgent(self)
+    self.path_to_stored_weights = ""
     self.algorithm = dqn_unity
