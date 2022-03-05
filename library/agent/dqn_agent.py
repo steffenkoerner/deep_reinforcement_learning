@@ -69,6 +69,6 @@ class DQNAgent():
     def set_target_weights_to_local(self):
         self.soft_update(self.qnetwork_local, self.qnetwork_target,1.0)
 
-    def load_weights(self):
-        self.qnetwork_local.load_state_dict(torch.load('/home/steffen/workspace/deep_reinforcement_learning/checkpoint_intermediate.pth'))
+    def load_weights(self, path_to_stored_weights):
+        self.qnetwork_local.load_state_dict(torch.load(path_to_stored_weights))
         self.set_target_weights_to_local()

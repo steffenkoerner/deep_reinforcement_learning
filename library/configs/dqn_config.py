@@ -37,5 +37,5 @@ class Config:
         )
 
     self.agent = DQNAgent(self)
-    self.path_to_stored_weights = ""
+    self.path_to_stored_weights = '/home/steffen/workspace/deep_reinforcement_learning/library/examples/dqn/checkpoint_basic.pth'
     self.algorithm = dqn_unity
