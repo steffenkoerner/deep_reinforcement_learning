@@ -10,7 +10,7 @@ def hidden_init(layer):
     return (-lim, lim)
 
 class QNetwork(nn.Module):
-    def __init__(self, config, seed):
+    def __init__(self, config):
         super(QNetwork, self).__init__()
         torch.manual_seed(config.seed)
         self.model = config.model

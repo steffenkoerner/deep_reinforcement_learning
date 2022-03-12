@@ -17,8 +17,8 @@ class DQNAgent():
         self.config = config
 
         # Q-Network
-        self.qnetwork_local = QNetwork(config, self.seed).to(device)
-        self.qnetwork_target = QNetwork(config, self.seed).to(device)
+        self.qnetwork_local = QNetwork(config).to(device)
+        self.qnetwork_target = QNetwork(config).to(device)
         self.set_target_weights_to_local()
         self.optimizer = optim.Adam(self.qnetwork_local.parameters(), lr=self.config.learning_rate)
 
