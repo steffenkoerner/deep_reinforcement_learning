@@ -145,28 +145,7 @@ https://github.com/dangkhoasdc/awesome-ai-residency
    - [10 Operating System Concepts to know](https://medium.com/cracking-the-data-science-interview/the-10-operating-system-concepts-software-developers-need-to-remember-480d0734d710)
 
 ## Unordered Content (Needs Clean Up !!!)
-### Concept a ML Engineer must know
-- Supervised Learning
-- Unsupervised Learning
-- Reinforcement Learning
-- Backpropagation
-- Gradient Decent, Stochastic Gradient Descent
-  - Local Minima
-  - Momentum
-- Capsule Network
-- Autoencoder
-- Neural Network, MLP, CNN, RNN
-- CNN
-  - Convoluational Layer
-  - Transposed Convolutional Layer
-  - Pooling Layer
-  - Padding
-    - Adding border pixels around the image
-  - Stride
-- Regularization (L1, L2, Dropout)
-- Vanishing Gradient
-- Activation Function (Sigmoid, Relu,...)
-- Learning Rate
+
 - [Transfer Learning](http://cs231n.github.io/transfer-learning/)
   - use pre-trained networks to improve the performance of your classifier
   
@@ -186,27 +165,3 @@ https://github.com/dangkhoasdc/awesome-ai-residency
   - [David Silver](https://github.com/dalmia/David-Silver-Reinforcement-learning)
   - [Denny Britz Reinforcement Learning](https://github.com/dennybritz/reinforcement-learning)
   - [DDPG Implementation](https://github.com/floodsung/DDPG)
-
-
-  ### Skills a ML should have
-- Building and training neural networks
-- Model evaluation and validation
-- Convolutional neural networks
-- Autoencoders and feature extraction
-- Transfer learning
-- Recurrent neural networks
-- Natural language processing
-- Data augmentation
-- Generative adversarial networks
-- Hyperparameter tuning
-- Model deployment and serving
-    
-
-### Brain Storming
-
-## Steps to do deep learning
-- Visualize Data
-- Pre-Process Data (Filtering of bad examples, Appyling little changes, Normalizing,...)
-- Define a Model
-- Train the model (Defining loss and optimization functions)
-- Save the best model
